@@ -1,0 +1,9 @@
+## Proximity of polarity
+
+#u:Pol0=%x[-3,3]
+u:Pol1=%x[-2,3]
+u:Pol2=%x[-1,3]
+#u:Pol3=%x[0,3]
+u:Pol4=%x[1,3]
+u:Pol5=%x[2,3]
+#u:Pol6=%x[3,3]

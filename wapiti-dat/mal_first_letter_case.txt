@@ -1,0 +1,7 @@
+## Uppercase/lowercase form
+
+#u:Caps? =%t[-1,0,"\u"]
+u:Caps? =%t[ 0,0,"\u"]
+#u:Caps? =%t[ 1,0,"\u"]
+#*:Caps/POS =%t[ 0,0,"\u"]/%x[0,2]
+

@@ -1,0 +1,9 @@
+## Proximity of polarity
+
+#uPol? left:%t[-3,3,".."]
+uPol? ll:%t[-2,3,".."]
+uPol? l:%t[-1,3,".."]
+#*:Pol?=%t[0,3,".."]
+uPol? rr:%t[1,3,".."]
+uPol? r:%t[2,3,".."]
+#uPol? right:%t[3,3,".."]
