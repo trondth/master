@@ -138,8 +138,12 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
                                 tmpexp = 'P' + exptype
                             else:
                                 tmpexp = exptype
-                            if not sent[i][tmpexp]:
-                                token['holder_candidate'].add(exptype)
+                            try:
+                                if not sent[i][tmpexp]:
+                                    token['holder_candidate'].add(exptype)
+                            except:
+                                print sent
+                                raise
                         else:
                             token['holder_candidate'].add(exptype)
                     #TODO - general restriction
@@ -576,7 +580,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
         daughterlists_sent(sent)
         ex = getexpressions_sent(sent)
         pex = getexpressions_sent(sent, predict=predict)
-        tagholdercandidates_sent(sent, transitive=transitive)
+        tagholdercandidates_sent(sent, transitive=transitive, predict=predict)
         candidates = getholdercandidates_list_sent(sent)
         #print candidates
         holder_dct = getholders_sent_new(sent)
@@ -647,7 +651,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                         counters['holder_not_in_candidate_head'] += 1
                         cand_exists = False
                         for cand in candidates[expt]:
-                            if exp_pair[1].intersection(get_subtree(sent, cand, transitive=transitive)):
+                            if exp_pair[1].intersection(get_subtree(sent, cand, transitive=True)):
                                 cand_exists = True
                         #print exp_pair[1], candidates[expt]
                         if not cand_exists:
@@ -728,7 +732,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                             # positions
                             pos[expt].append({'sent': sent_i,
                                                     'exp': exp_pair[0],
-                                                    'holder_sys': get_subtree(sent, cand, transitive=transitive),
+                                                    'holder_sys': get_subtree(sent, cand, transitive=True),
                                                     'holder_gold': exp_pair[1]}) 
 
                             # features
@@ -1354,9 +1358,6 @@ def create_gates(lst):
     for sent in lst:
         cur_exp = False
         for token in sent:
-            token['Pdse'] = False
-            token['Pese'] = False
-            token['Pose'] = False
             tmp_offset_end = tmp_offset_start + len(token['form'])
             token['slice'] = slice(tmp_offset_start, tmp_offset_end)
             if 'label' not in token:
@@ -1365,6 +1366,9 @@ def create_gates(lst):
                 if cur_exp:
                     cur_exp['PGATE'][0]['slice'] = slice(last_token['PGATE'][0]['slice_start'], last_token['slice'].stop)
                     cur_exp = False
+            token['Pdse'] = False
+            token['Pese'] = False
+            token['Pose'] = False
             if token['label'][0] == 'B':
                 exp_count += 1
                 token['PGATE'] = [{'ann_type': labeltoanntype(token['label']),
@@ -1383,6 +1387,10 @@ def create_gates(lst):
         # cleanup
         if cur_exp:
             cur_exp['PGATE'][0]['slice'] = slice(last_token['PGATE'][0]['slice_start'], last_token['slice'].stop)
+        for token in sent:
+            if 'Pdse' not in token:
+                print sent
+                raise
 
 def labeltoanntype(label):
     if label == "B-ESE" or label == "I-ESE":
@@ -1415,6 +1423,9 @@ def jointestandresult(tlst, rlst):
                 #raise ValueError()
             newtoken = copy.deepcopy(ttoken)
             newtoken['PGATE'] = rtoken['PGATE']
+            newtoken['Pdse'] = rtoken['Pdse']
+            newtoken['Pese'] = rtoken['Pese']
+            newtoken['Pose'] = rtoken['Pose']
             newtoken['label'] = rtoken['label']
             newtoken['label/score'] = rtoken['label/score']
             newsent.append(newtoken)
@@ -1610,7 +1621,7 @@ if __name__ == "__main__":
     parser.add_argument("-ctrain", dest="ctrain", metavar="FILE")
     parser.add_argument("-ctest", dest="ctest", metavar="FILE")
     parser.add_argument("-lthsrl", dest="lthsrl", action='store_true')
-    parser.add_argument("-transitive", dest="transitive", action='store_true')
+    parser.add_argument("-transitive", dest="transitive", help='unused', action='store_true')
     parser.add_argument("-stats", "--stats")
     parser.add_argument("-overlappingcandidates", dest="overlappingcandidates", action='store_true')
     parser.add_argument("-allnpsashc", dest="allnpsashc", action='store_true')
