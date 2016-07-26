@@ -99,7 +99,7 @@ def getexpressions_sent(sent, predict=False):
                         expr['dse'][gate['line_id']]['token_id'].add(i+1)
     return expr
 
-def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False, restrict_all=False): 
+def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False, restrict_all=False, allnpsashc=False, predict=False): 
     """
     Tags holder candidates for the different types of expressions.
     Head of noun phrases are selected as holder candidates for an
@@ -112,6 +112,8 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
     """
     if args.overlappingcandidates:
         overlappingcandidates = True
+    if args.allnpsashc:
+        allnpsashc = True
     head_num = False
     #rsets = {}
     #for exptype in EXPTYPES:
@@ -131,13 +133,27 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
                     for exptype in EXPTYPES:
                         #print exptype
                         #if i+1 not in rsets[exptype]:
-                        if not sent[i][exptype]:
+                        if not allnpsashc: 
+                            if predict:
+                                tmpexp = 'P' + exptype
+                            else:
+                                tmpexp = exptype
+                            if not sent[i][tmpexp]:
+                                token['holder_candidate'].add(exptype)
+                        else:
                             token['holder_candidate'].add(exptype)
                     #TODO - general restriction
             else:
                 for exptype in EXPTYPES:
                     #if i+1 not in rsets[exptype]:
-                    if not sent[i][exptype]:
+                    if not allnpsashc:
+                        if predict:
+                            tmpexp = 'P' + exptype
+                        else:
+                            tmpexp = exptype
+                        if not sent[i][tmpexp]:
+                            token['holder_candidate'].add(exptype)
+                    else:
                         token['holder_candidate'].add(exptype)
     if not overlappingcandidates:
         _tagholdercandidates_sent_follow_daughters(sent, head_num)
@@ -638,7 +654,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                             counters['ignore_count'] += 1
                             counters['holder_not_in_candidates'] += 1
                             counters['holder_not_in_candidates' + exp_pair[2]] += 1
-                            stats['holders_not_in_candidates'].append({'candidates': candidates[expt_train],
+                            stats['holders_not_in_candidates'].append({'candidates': candidates[expt],
                                                                        'exp_pair': exp_pair})
                 else:
                     cand_exists = False
@@ -744,6 +760,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                             features[expt].append(featuresdict)
                 else:
                     counters["expt not in candidates"] += 1
+                    counters["expt not in candidates" + expt] += 1
 
     stats['positions'] = pos
     return features, labels, stats
@@ -830,6 +847,22 @@ def count_holder_candidates(lst, exptype=False, check_exp=False):
             if 'holder_candidate' in t:
                 pass
     return counters
+
+#def tagholderfrompred(sent):
+#    for token in sent:
+#        for gate in token['PGATE']:
+#            # TODO: Error - includes none-span-expr.
+#            tmp = gate['ann_type']
+#            #tmp = expr[int(token.slice.start)]
+#            if tmp == 'GATE_objective-speech-event':
+#                token['Pose'] = True #tmp[4]
+#            elif tmp == 'GATE_expressive-subjectivity':
+#                token['Pese'] = True #tmp[4]
+#            elif tmp == 'GATE_direct-subjective':
+#                token['Pdse'] = True #tmp[4]
+#            else:
+#                # Other ann_type
+#                pass #print "FEIL. {}".format(tmp)
 
 def cleanupnonespanexpressions(lst):
     for sent in lst:
@@ -1321,6 +1354,9 @@ def create_gates(lst):
     for sent in lst:
         cur_exp = False
         for token in sent:
+            token['Pdse'] = False
+            token['Pese'] = False
+            token['Pose'] = False
             tmp_offset_end = tmp_offset_start + len(token['form'])
             token['slice'] = slice(tmp_offset_start, tmp_offset_end)
             if 'label' not in token:
@@ -1335,9 +1371,11 @@ def create_gates(lst):
                                       'data_type': 'string',
                                       'slice_start': tmp_offset_start,
                                       'line_id': exp_count}]
+                token['P' + token['label'][2:]] = True
                 cur_exp = token
             if token['label'][0] == 'I':
                 token['PGATE'] = last_token['PGATE']
+                token['P' + token['label'][2:]] = True
             if 'PGATE' not in token:
                 token['PGATE'] = []
             tmp_offset_start = tmp_offset_end + 1
@@ -1575,6 +1613,7 @@ if __name__ == "__main__":
     parser.add_argument("-transitive", dest="transitive", action='store_true')
     parser.add_argument("-stats", "--stats")
     parser.add_argument("-overlappingcandidates", dest="overlappingcandidates", action='store_true')
+    parser.add_argument("-allnpsashc", dest="allnpsashc", action='store_true')
     parser.add_argument("-iob2", dest="iob2", help="Read output data from opinion expression detection", metavar="FILE")
     parser.add_argument("-savejson", dest="savejson", metavar="FILE")
     parser.add_argument("-savemodels", dest="savemodels", metavar="FILE")
