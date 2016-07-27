@@ -522,11 +522,11 @@ def count_sys(lst):
     for item in lst:
         if str(item[0]) not in exp_seen:
             exp_seen.add(str(item[0]))
-            if args.onlyinternals:
-                if not isinstance(item[1], basestring):
-                    counters['sys_len_new' + item[2]] += 1
-            else:
-                counters['sys_len_new' + item[2]] += 1
+            #if args.onlyinternals:
+            #    if not isinstance(item[1], basestring):
+            #        counters['sys_len_new' + item[2]] += 1
+            #else:
+            counters['sys_len_new' + item[2]] += 1
     #for item in lst:
     #    if not item[0].intersection(exp_seen_set):
     #        exp_seen_set = exp_seen_set | item[0]
@@ -538,11 +538,11 @@ def count_gold(lst):
     for item in lst:
         if str(item[0]) not in exp_seen:
             exp_seen.add(str(item[0]))
-            if args.onlyinternals:
-                if not isinstance(item[1], basestring):
-                    counters['gold_len_new' + item[2]] += 1
-            else:
-                counters['gold_len_new' + item[2]] += 1
+            #if args.onlyinternals:
+            #    if not isinstance(item[1], basestring):
+            #        counters['gold_len_new' + item[2]] += 1
+            #else:
+            counters['gold_len_new' + item[2]] += 1
     for item in lst:
         #print "item[0]", item[0]
         #print "exp_seen_set", exp_seen_set
@@ -1000,7 +1000,11 @@ class evaluate:
         #print "span spanprime", span, spanprime
         if isinstance(span, str) or isinstance(spanprime, str):
             #print span, " ... ", spanprime
-            return span == spanprime
+            #return span == spanprime
+            if span == spanprime:
+                return 1
+            else:
+                return 0
         tmp = span.intersection(spanprime)
         if tmp:
             return float(len(tmp)) / len(spanprime)
@@ -1023,6 +1027,16 @@ class evaluate:
             else:
                 unique_exp_s_p.append(item)
             cur = item
+        if args.onlyinternals:
+            for item in unique_exp_s_p:
+                if item['holder_gold'] == 'w':
+                    counter['g_holder_w_' + item['exp']] += 1
+                    if self.spancoverage(item['holder_gold'], item['holder_sys']) > 0:
+                        counter['s_holder_w_' + item['exp']] += 1
+                if item['holder_gold'] == 'implicit':
+                    counter['g_holder_implicit_' + item['exp']] += 1
+                    if self.spancoverage(item['holder_gold'], item['holder_sys']) > 0:
+                        counter['g_holder_implicit_' + item['exp']] += 1
         return unique_exp_s_p
 
     def merge_system_pairs(self, s_p_int, s_p_imp=False, s_p_w=False):
@@ -1222,6 +1236,11 @@ class evaluate:
             sys_len = (counters['sys_len_new' + exptype] 
                     + counters['falsely_detected_exp' + exptype] 
                     - counters['expt_not_in_candidates' + exptype])
+            if args.onlyinternals:
+                sys_len -= counters['holder_w_' + exptype]
+                sys_len -= counters['holder_implicit_' + exptype]
+                gold_len -= counters['holder_w_' + exptype]
+                gold_len -= counters['holder_implicit_' + exptype]
             
         else:
             for exp in EXPTYPES:
