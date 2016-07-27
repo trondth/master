@@ -114,6 +114,7 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
         overlappingcandidates = True
     if args.allnpsashc:
         allnpsashc = True
+        print "allnpsashc"
     head_num = False
     #rsets = {}
     #for exptype in EXPTYPES:
@@ -521,7 +522,11 @@ def count_sys(lst):
     for item in lst:
         if str(item[0]) not in exp_seen:
             exp_seen.add(str(item[0]))
-            counters['sys_len_new' + item[2]] += 1
+            if args.onlyinternals:
+                if not isinstance(item[1], basestring):
+                    counters['sys_len_new' + item[2]] += 1
+            else:
+                counters['sys_len_new' + item[2]] += 1
     #for item in lst:
     #    if not item[0].intersection(exp_seen_set):
     #        exp_seen_set = exp_seen_set | item[0]
@@ -533,7 +538,11 @@ def count_gold(lst):
     for item in lst:
         if str(item[0]) not in exp_seen:
             exp_seen.add(str(item[0]))
-            counters['gold_len_new' + item[2]] += 1
+            if args.onlyinternals:
+                if not isinstance(item[1], basestring):
+                    counters['gold_len_new' + item[2]] += 1
+            else:
+                counters['gold_len_new' + item[2]] += 1
     for item in lst:
         #print "item[0]", item[0]
         #print "exp_seen_set", exp_seen_set
@@ -763,8 +772,8 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                                 
                             features[expt].append(featuresdict)
                 else:
-                    counters["expt not in candidates"] += 1
-                    counters["expt not in candidates" + expt] += 1
+                    counters["expt_not_in_candidates"] += 1
+                    counters["expt_not_in_candidates" + expt] += 1
 
     stats['positions'] = pos
     return features, labels, stats
@@ -1038,17 +1047,20 @@ class evaluate:
         #print len(s_p_imp)
         #print len(s_p_w)
         for cur_int, cur_imp, cur_w in itertools.izip_longest(s_p_int, s_p_imp, s_p_w):
+            #cur = {'confidence': 0.0}
+            #if cur_int['confidence'] > 0.5:
+            #    cur = cur_int
             cur = cur_int
             #if cur_imp and cur_imp['confidence'] > cur['confidence']:
             if cur['confidence'] > 0.5:
                 cur_imp = False
                 cur_w = False
             if cur_imp and (cur_imp['confidence'] > 0.5 and cur_imp['confidence'] > cur['confidence']) or cur['confidence'] == 0:
-                if cur_imp['sent'] != cur['sent']:
+                if 'sent' in cur and cur_imp['sent'] != cur['sent']:
                     raise
                 cur = cur_imp
             if cur_w:
-                if cur_w['sent'] != cur['sent']:
+                if 'sent' in cur and cur_w['sent'] != cur['sent']:
                     print "int.. ", len(s_p_int)
                     print "imp.. ", len(s_p_imp)
                     print "w..   ", len(s_p_w)
@@ -1207,13 +1219,16 @@ class evaluate:
             prec_sum += self.spancoverage(item['holder_gold'], item['holder_sys'])
         if exptype:
             gold_len = counters['gold_len_new' + exptype] 
-            sys_len = counters['sys_len_new' + exptype] + counters['falsely_detected_exp' + exptype]
+            sys_len = (counters['sys_len_new' + exptype] 
+                    + counters['falsely_detected_exp' + exptype] 
+                    - counters['expt_not_in_candidates' + exptype])
             
         else:
             for exp in EXPTYPES:
                 gold_len += counters['gold_len_new' + exp] 
                 sys_len += counters['sys_len_new' + exp] 
             sys_len += counters['falsely_detected_exp']
+            sys_len -= counters['expt_not_in_candidates']
 
         if DEBUGNOW:
             print "exptype: {}".format(exptype)
@@ -1249,6 +1264,8 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
     @param trainset list of sentences with lists of tokens
     @param testset list of sentences with lists of tokens
     """
+    if args.onlyinternals:
+        externals = False
     system_pairs = []
     #system_pairs
     #system_pairs.extend(eval.get_system_pairs(stest['positions']['dse'], results))
@@ -1301,14 +1318,14 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
         gold_p2 = copy.deepcopy(gold_p1)
         gold_p3 = copy.deepcopy(gold_p1)
-        if clfw:
+        if externals and clfw:
             resultsw = clfw.predict_proba(Xtw)
             s_p_w=ev.get_system_pairs_prob(stest['positions'][exp + 'w'], resultsw, gold_p1)
             #print "s_p_w", len(s_p_w)
             if DEBUG:
                 print "RESULTSW"
                 print resultsw
-        if clfimp:
+        if externals and clfimp:
             resultsimp = clfimp.predict_proba(Xtimp)
             s_p_imp=ev.get_system_pairs_prob(stest['positions'][exp + 'implicit'], resultsimp, gold_p2)
             #print "s_p_imp", len(s_p_imp)
@@ -1316,7 +1333,10 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
                 print "RESULTSIMP"
                 print resultsimp
         s_p_int=ev.get_system_pairs_prob(stest['positions'][exp], results, gold_p3)
-        system_pairs_exp = ev.merge_system_pairs(s_p_int, s_p_imp=s_p_imp, s_p_w=s_p_w)
+        if externals:
+            system_pairs_exp = ev.merge_system_pairs(s_p_int, s_p_imp=s_p_imp, s_p_w=s_p_w)
+        else:
+            system_pairs_exp = s_p_int
         if predict:
             ssc_exp = ev.spansetcoverage_o_p(system_pairs_exp, exptype=exp)
             print "system exp - {}:\n{}".format(exp, prf_prettystring(ssc_exp))
@@ -1625,6 +1645,7 @@ if __name__ == "__main__":
     parser.add_argument("-stats", "--stats")
     parser.add_argument("-overlappingcandidates", dest="overlappingcandidates", action='store_true')
     parser.add_argument("-allnpsashc", dest="allnpsashc", action='store_true')
+    parser.add_argument("-onlyinternals", action='store_true')
     parser.add_argument("-iob2", dest="iob2", help="Read output data from opinion expression detection", metavar="FILE")
     parser.add_argument("-savejson", dest="savejson", metavar="FILE")
     parser.add_argument("-savemodels", dest="savemodels", metavar="FILE")
