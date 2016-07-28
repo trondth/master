@@ -114,10 +114,9 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
         overlappingcandidates = True
     if args.allnpsashc:
         allnpsashc = True
+    if args.restrict_all:
+        restrict_all = True
     head_num = False
-    #rsets = {}
-    #for exptype in EXPTYPES:
-    #    rsets[exptype] = set()
     for i, token in enumerate(sent):
         if 'daughters' not in token:
             raise ValueError("Need to run daughterlists_sent first.")
@@ -130,9 +129,9 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
                 tmp_token = sent[head_id-1]
                 if not ('head' in tmp_token and
                         (tmp_token['pos'][:2] == 'NN' or tmp_token['pos'][:3] == 'PRP')):
+                    if restrict_all:
+                        add_this = True
                     for exptype in EXPTYPES:
-                        #print exptype
-                        #if i+1 not in rsets[exptype]:
                         if not allnpsashc: 
                             if predict:
                                 tmpexp = 'P' + exptype
@@ -140,14 +139,22 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
                                 tmpexp = exptype
                             try:
                                 if not sent[i][tmpexp]:
-                                    token['holder_candidate'].add(exptype)
+                                    if not restrict_all:
+                                        token['holder_candidate'].add(exptype)
+                                else:
+                                    add_this = False
                             except:
                                 print sent
                                 raise
                         else:
                             token['holder_candidate'].add(exptype)
-                    #TODO - general restriction
+                    if restrict_all and add_this:
+                        for exptype in EXPTYPES:
+                            token['holder_candidate'].add(exptype)
+
             else:
+                if restrict_all:
+                    add_this = True
                 for exptype in EXPTYPES:
                     #if i+1 not in rsets[exptype]:
                     if not allnpsashc:
@@ -156,8 +163,14 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
                         else:
                             tmpexp = exptype
                         if not sent[i][tmpexp]:
-                            token['holder_candidate'].add(exptype)
+                            if not restrict_all:
+                                token['holder_candidate'].add(exptype)
+                        else:
+                            add_this = False
                     else:
+                        token['holder_candidate'].add(exptype)
+                if restrict_all:
+                    if add_this:
                         token['holder_candidate'].add(exptype)
     if not overlappingcandidates:
         _tagholdercandidates_sent_follow_daughters(sent, head_num)
@@ -203,7 +216,8 @@ def getholder_exp_pairs_sent(sent, expr, holders, exptype=False, isolate_exp=Tru
                 if DEBUG:
                     print 'missing nested-source for', gate['GATE']
                 tmp = False
-            if tmp:
+                counters['exp-pair no nested source'] += 1
+            if tmp: 
                 if tmp in holders:
                     if isinstance(holders[tmp], OrderedDict):
                         for h in holders[tmp].values():
@@ -608,27 +622,16 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
             paths = getpaths_sent(getgraph_sent(sent))
         else:
             paths = False
-        # detected false exp -> fp
-        #for e in pex[expt]:
-        # not detected exp -> fn
-        # refine exp_pair to only list corresponding 
-        #print "predict"
-
         if predict:
 
             holder_exp_pairs_sys = []
 
-            #for ex in extolst(pex, gatekey='PGATE'):
-            #    counters['detected_expressions'] += 1
-            #    counters['detected_expressions' + ex['expt']] += 1
-
             for c, p in enumerate(extolst(pex, gatekey='PGATE')):
                 # first located e' that corresponded to e
-                argmaxcxe = 0
+                argmaxcxe = -1
                 current_pair = None
                 for exp_pair_i, exp_pair in enumerate(holder_exp_pairs):
-                    #print "exp_pair_i", exp_pair_i, exp_pair, p
-                    #regardless of exp type j&m 7.1.1
+                    #argmax c(x,e) regardless of exp type j&m 7.1.1
                     if DEBUG:
                         print exp_pair
                     cxe = ev.spancoverage(exp_pair[0], p['token_id']) 
@@ -639,9 +642,6 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                         current_pair = exp_pair
                 if current_pair:
                     holder_exp_pairs_sys.append((p['token_id'], current_pair[1], current_pair[2]))
-                    #counters['correct_detected_exp'] += 1
-                    #holder_exp_pair_sys_len[str(p['token_id'])] = current_pair
-                    #print "c", current_pair
                 else:
                     counters['falsely_detected_exp'] += 1
                     counters['falsely_detected_exp' + p['expt']] += 1
@@ -778,8 +778,8 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                                 
                             features[expt].append(featuresdict)
                 else:
-                    counters["expt not in candidates"] += 1
-                    counters["expt not in candidates" + expt] += 1
+                    counters["expt_not_in_candidates"] += 1
+                    counters["expt_not_in_candidates" + expt] += 1
 
     stats['positions'] = pos
     return features, labels, stats
@@ -1033,16 +1033,16 @@ class evaluate:
             else:
                 unique_exp_s_p.append(item)
             cur = item
-        if args.onlyinternals:
-            for item in unique_exp_s_p:
-                if item['holder_gold'] == 'w':
-                    counter['g_holder_w_' + item['exp']] += 1
-                    if self.spancoverage(item['holder_gold'], item['holder_sys']) > 0:
-                        counter['s_holder_w_' + item['exp']] += 1
-                if item['holder_gold'] == 'implicit':
-                    counter['g_holder_implicit_' + item['exp']] += 1
-                    if self.spancoverage(item['holder_gold'], item['holder_sys']) > 0:
-                        counter['g_holder_implicit_' + item['exp']] += 1
+        #if args.onlyinternals:
+        #    for item in unique_exp_s_p:
+        #        if item['holder_gold'] == 'w':
+        #            counter['g_holder_w_' + item['exp']] += 1
+        #            if self.spancoverage(item['holder_gold'], item['holder_sys']) > 0:
+        #                counter['s_holder_w_' + item['exp']] += 1
+        #        if item['holder_gold'] == 'implicit':
+        #            counter['g_holder_implicit_' + item['exp']] += 1
+        #            if self.spancoverage(item['holder_gold'], item['holder_sys']) > 0:
+        #                counter['g_holder_implicit_' + item['exp']] += 1
         return unique_exp_s_p
 
     def merge_system_pairs(self, s_p_int, s_p_imp=False, s_p_w=False):
@@ -1069,9 +1069,9 @@ class evaluate:
         for cur_int, cur_imp, cur_w in itertools.izip_longest(s_p_int, s_p_imp, s_p_w):
             cur = cur_int
             #if cur_imp and cur_imp['confidence'] > cur['confidence']:
-            if cur['confidence'] > 0.5:
-                cur_imp = False
-                cur_w = False
+            ## if cur['confidence'] > 0.5:
+            ##     cur_imp = False
+            ##     cur_w = False
             if cur_imp and (cur_imp['confidence'] > 0.5 and cur_imp['confidence'] > cur['confidence']) or cur['confidence'] == 0:
                 if cur_imp['sent'] != cur['sent']:
                     raise
@@ -1471,6 +1471,9 @@ def jointestandresult(tlst, rlst):
 
 def featurestats(lst, feature='synt_path'):
     featurecounter = Counter()
+    featurecounters = {}
+    for exp in EXPTYPES:
+        featurecounters[exp] = Counter()
     othercounters = Counter()
     for i, sent in enumerate(lst):
         ex = getexpressions_sent(sent)
@@ -1485,9 +1488,11 @@ def featurestats(lst, feature='synt_path'):
                 othercounters['OrderedDict'] += 1
             elif isinstance(pair[1], set):
                 if feature == 'synt_path':
-                    featurecounter[syntactic_path(getex_head(pair[1], sent), getex_head(pair[0], sent),
-                                                      sent)] += 1
-    return featurecounter, othercounters
+                    syntpath = syntactic_path(getex_head(pair[1], sent), getex_head(pair[0], sent),
+                                                      sent)
+                    featurecounter[syntpath] += 1
+                    featurecounters[pair[2]][syntpath] += 1
+    return featurecounter, featurecounters, othercounters
 
 def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld=False):
     """
@@ -1686,6 +1691,7 @@ if __name__ == "__main__":
     parser.add_argument("-transitive", dest="transitive", help='unused', action='store_true')
     parser.add_argument("-stats", "--stats")
     parser.add_argument("-overlappingcandidates", dest="overlappingcandidates", action='store_true')
+    parser.add_argument("-restrict_all", action='store_true')
     parser.add_argument("-allnpsashc", dest="allnpsashc", action='store_true')
     parser.add_argument("-iob2", dest="iob2", help="Read output data from opinion expression detection", metavar="FILE")
     parser.add_argument("-savejson", dest="savejson", metavar="FILE")
@@ -1700,11 +1706,25 @@ if __name__ == "__main__":
         lst = read_jsonfile(args.loadjsonlist)
 
     if args.featurestats:
-        fs, os = featurestats(lst, feature='synt_path')
-        print len(fs)
-        for k, v in os:
-            print k, v
         
+        for dep in DEPREPS:
+            print "\n= DEPREP: {} =".format(dep)
+            fs, fss, os = featurestats(lst['train'][dep] + lst['test'][dep], feature=args.featurestats)
+            for it in fs.most_common(20):
+                print it[0], it[1]
+            print "= Number of different features ="
+            print len(fs)
+            print "\n= For specific exptypes = "
+            for exp in EXPTYPES:
+                print "\n= {} =".format(exp)
+                for it in fss[exp].most_common(10):
+                    print it[0], it[1]
+                print "= Number of different features ="
+                print len(fss[exp])
+            print "= Other counts ="
+            for k, v in os.items():
+                print k, v
+
         
     if args.train or (args.eval and not (args.jtrain or args.loadmodels) ):
         #if args.heldout: devset=False
