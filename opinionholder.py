@@ -335,7 +335,6 @@ def cleanpaths(sent):
 def getgraph_sent(sent):
     # http://docs.scipy.org/doc/scipy/reference/sparse.csgraph.html
     tmp = []
-    #range(1, 1+len(sent))
     for i, t in enumerate(sent):
         arr = [0]*len(sent)
         for num in t['daughters']:
@@ -349,8 +348,6 @@ def getgraph_sent(sent):
 def getpaths_sent(graph):
     return csgraph.shortest_path(graph, return_predecessors=True)
                                               
-#daughterlists_sent(d)
-#dist, predec = getpaths_sent(getgraph_sent(b))
 def print_path(paths, i1, i2):
     i = i1
     while i != i2:
@@ -364,8 +361,6 @@ def syntactic_path(cand, expr, sent, paths=False):
     @param sent List of tokens in sentence
     @return unicode string
     """
-    #print "Fra", cand, " til", expr
-    #print sent[cand-1]['head'], sent[expr-1]['head']
     agg_path = u''
     if not paths:
         dist, predec = getpaths_sent(getgraph_sent(sent))
@@ -376,10 +371,6 @@ def syntactic_path(cand, expr, sent, paths=False):
     i = i1 = cand - 1
     i2 = expr -1
     while i != i2:
-        #print "#", i+1
-        #print type(predec[i2, i]+1)
-        #print type(sent[i]['head'])
-        #print predec[i2, i]+1 == sent[i]['head']
         if predec[i2, i]+1 == int(sent[i]['head']):
             agg_path += sent[i]['deprel'] #unicode(i)
             agg_path += u"↑"
@@ -389,10 +380,6 @@ def syntactic_path(cand, expr, sent, paths=False):
         else:
             return "none"
             print "FEIL - ingen path funnet"
-            #print dist, predec
-            #print agg_path
-            #print cand, expr, sent
-            #raise Exception#todo 
         i = predec[i2, i]
     return agg_path
 
@@ -403,7 +390,6 @@ def get_predicates(sent):
         if t['pred'][0] != '_':
             preds[t['pred']] = count
             count += 1
-    #print preds
     return preds
 
 def shallow_sem_relation(cand, expr, sent):
@@ -424,17 +410,13 @@ def shallow_sem_relation(cand, expr, sent):
 def token_is_holder(num, sent, pairs, exptype):
     pair_num = set()
     for p in pairs:
-        #print p
         if isinstance(p[1], set):
             if num in p[1]:
-                #print "yes", num
                 pair_num.add(num)
             else:
                 pass
-                #print "no", num
         else:
             pass
-            #print "implicit or writer"
     if pair_num:
         return (True, pair_num)
     else:
@@ -520,9 +502,6 @@ def ex_verb_voice(sent, ex_set, be_outside_ex=True):
         return 'Passive'
     elif criteria_1 and criteria_3 and be_outside_ex:
         _slice.sort()
-        #print '"be" outside expression'
-        #for i in _slice:
-        #    print sent[i]['form'], sent[i]['pos']
         return 'Passive'
     elif verb_exists:
         return 'Active'
@@ -547,10 +526,6 @@ def count_sys(lst):
             #        counters['sys_len_new' + item[2]] += 1
             #else:
             counters['sys_len_new' + item[2]] += 1
-    #for item in lst:
-    #    if not item[0].intersection(exp_seen_set):
-    #        exp_seen_set = exp_seen_set | item[0]
-    #        counters['sys_len_ignoring_overlap' + item[2]] += 1
 
 def count_gold(lst):
     exp_seen = set()
@@ -564,14 +539,9 @@ def count_gold(lst):
             #else:
             counters['gold_len_new' + item[2]] += 1
     for item in lst:
-        #print "item[0]", item[0]
-        #print "exp_seen_set", exp_seen_set
         if not item[0].intersection(exp_seen_set):
             exp_seen_set = exp_seen_set | item[0]
             counters['gold_len_ignoring_overlap' + item[2]] += 1
-    #if counters['gold_len_new'] == 20:
-    #    print counters
-    #    raise
 
 def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, predict=True):
     """
@@ -587,7 +557,6 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
     stats = {'holders_not_in_candidates': [],
              'position': {}}
     if not exptype:
-        #raise ValueError("Expression type must be given")
         exptypelist = EXPTYPES
     features = {}
     labels = {}
@@ -611,9 +580,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
         pex = getexpressions_sent(sent, predict=predict)
         tagholdercandidates_sent(sent, transitive=transitive, predict=predict)
         candidates = getholdercandidates_list_sent(sent)
-        #print candidates
         holder_dct = getholders_sent_new(sent)
-        #try:
         holder_exp_pairs = getholder_exp_pairs_sent(sent, ex, holder_dct, test=predict)
         count_gold(holder_exp_pairs) 
         if predict and DEBUG:
@@ -668,7 +635,6 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                         for cand in candidates[expt]:
                             if exp_pair[1].intersection(get_subtree(sent, cand, transitive=True)):
                                 cand_exists = True
-                        #print exp_pair[1], candidates[expt]
                         if not cand_exists:
                             counters['ignore_count'] += 1
                             counters['holder_not_in_candidates'] += 1
@@ -713,7 +679,6 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                 if tmp:
                     featuresdict['dom_ex_type'] = tmp
                 featuresdict['ex_verb_voice'] = ex_verb_voice(sent, exp_pair[0])
-                # TODO featuresdict['exp_verb_voice']
                 featuresdict['deprel_to_parent'] = sent[ex_head-1]['deprel']
                 features[expt + 'w'].append(featuresdict)
                 #features[expt + 'implicit'].append(featuresdict)
@@ -767,7 +732,6 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                             if tmp:
                                 featuresdict['dom_ex_type'] = tmp
                             featuresdict['ex_verb_voice'] = ex_verb_voice(sent, exp_pair[0])
-                            # TODO featuresdict['exp_verb_voice']
                             if cand > 1:
                                 featuresdict['context_r_word'] = sent[cand-2]['form']
                                 featuresdict['context_r_pos'] = sent[cand-2]['pos']
@@ -800,11 +764,6 @@ def cand_in_ghodct(cand, ghodct):
             return True
     return False
     
-
-#def gh_c_overlap(ghodct, c):
-#    curmax = 0
-#    cur = False
-#    for h in ghodct:
         
 def create_matrix(features, labels):
     """
@@ -825,7 +784,6 @@ def transform_to_matrix(features, labels, vec):
     
 
 def create_model(X, y):
-    #clf = svm.SVC(probability=True)
     try:
         clf = svm.SVC(probability=True, kernel='linear')
         clf.fit(X, y)
@@ -867,29 +825,12 @@ def count_holder_candidates(lst, exptype=False, check_exp=False):
                 pass
     return counters
 
-#def tagholderfrompred(sent):
-#    for token in sent:
-#        for gate in token['PGATE']:
-#            # TODO: Error - includes none-span-expr.
-#            tmp = gate['ann_type']
-#            #tmp = expr[int(token.slice.start)]
-#            if tmp == 'GATE_objective-speech-event':
-#                token['Pose'] = True #tmp[4]
-#            elif tmp == 'GATE_expressive-subjectivity':
-#                token['Pese'] = True #tmp[4]
-#            elif tmp == 'GATE_direct-subjective':
-#                token['Pdse'] = True #tmp[4]
-#            else:
-#                # Other ann_type
-#                pass #print "FEIL. {}".format(tmp)
-
 def cleanupnonespanexpressions(lst):
     for sent in lst:
         for t in sent:
             t['dse'] = False
             t['ese'] = False
             t['ose'] = False
-            #print t
             for gate in t['GATE']:
                 if gate['slice'].start != gate['slice'].stop:
                     tmp = gate['ann_type']
@@ -948,8 +889,6 @@ def count_span_shorter_than_token(lst):
                     spans += 1
                     count_token = True
                     count_sent = True
-                #elif gate_len == 1 and token_n == 0:
-                #    print sent_n, token['form']
             if count_token:
                 tokens += 1
                 token_n_hit.append(token_n)
@@ -964,10 +903,8 @@ def count_span_shorter_than_token(lst):
             
 def get_subtree(sent, num, transitive=False):
     # Gets the whole subtree, this is a problem with holders like michael hirsch ..., sent 1271 devtestset
-    #print num
     span = set([num])
     daughters = sent[num-1]['daughters']
-    #print daughters
     if transitive:
         for d in daughters:
             span = span.union(get_subtree(sent, d))
@@ -1003,10 +940,7 @@ class evaluate:
         self.current_ex = None
 
     def spancoverage(self, span, spanprime):
-        #print "span spanprime", span, spanprime
         if isinstance(span, basestring) or isinstance(spanprime, basestring):
-            #print span, " ... ", spanprime
-            #return span == spanprime
             if span == spanprime:
                 return 1
             else:
@@ -1051,7 +985,6 @@ class evaluate:
         @return List of system pairs for unique expressions with highest confidence score
         """
         if not s_p_imp and not s_p_w:
-            #if DEBUG: print "return s_p_int directly"
             return s_p_int
         s_p = []
         if not s_p_imp:
@@ -1063,15 +996,8 @@ class evaluate:
                 print it['sent'], it['exp'], it['holder_gold']
             for it in s_p_w:
                 print it['sent'], it['exp'], it['holder_gold']
-        #print len(s_p_int)
-        #print len(s_p_imp)
-        #print len(s_p_w)
         for cur_int, cur_imp, cur_w in itertools.izip_longest(s_p_int, s_p_imp, s_p_w):
             cur = cur_int
-            #if cur_imp and cur_imp['confidence'] > cur['confidence']:
-            ## if cur['confidence'] > 0.5:
-            ##     cur_imp = False
-            ##     cur_w = False
             if cur_imp and (cur_imp['confidence'] > 0.5 and cur_imp['confidence'] > cur['confidence']) or cur['confidence'] == 0:
                 if cur_imp['sent'] != cur['sent']:
                     raise
@@ -1084,8 +1010,6 @@ class evaluate:
                     print cur_w
                     print cur
                     raise
-                #print "cur_w", cur_w
-                #if cur_w['confidence'] > cur['confidence']:
                 if (cur_w['confidence'] > 0.5 and cur_w['confidence'] > cur['confidence']) or cur['confidence'] == 0:
                     cur = cur_w
             s_p.append(cur)
@@ -1101,21 +1025,11 @@ class evaluate:
         Return a list of pairs detected by system and the confidence level.
         For the gold expr, we can ignore the 
         """
-        #print len(lst)
-        #print len(results)
-        
-        #print "............."
         system_pairs = []
-        #for label in self.labels:
-        #    system_pairs[label] = []
-        #print type(results)
-        #print results
-        #print lst
         
         if isinstance(results, np.ndarray):
             cur = None
             curmax = None
-            #print results
             for i, item in enumerate(lst):
                 if cur and (item['sent'] != cur['sent'] or
                                 item['exp'] != cur['exp']):
@@ -1123,43 +1037,31 @@ class evaluate:
                     system_pairs.append(cur)
                     cur = None
                 if not cur:
-                    #print i, "cur", item, results
-                    # proba in sorted order [False True]
                     curmax = results[i][1]
                     cur = item
                 if results[i][1] > curmax:
-                    #print i, "cur", item, results
                     curmax = results[i][1]
                     cur = item
-                #print i, item
             if cur:
                 cur.update({'confidence': curmax})
                 system_pairs.append(cur)
 
-            #for i, item in enumerate(system_pairs):
-            #    print "...........", i, item
             
-            #read s_p_int into s_p_gold lst
 
             c = 0
-            #print "LEN GOLD (p):", len(gold_lst)
             s_p_new = []
             for it in gold_lst:
                 if len(system_pairs) > c:
-                    #print 'gold:', it['sent'], it['exp']
-                    #print 'sys: ', system_pairs[c]['sent'], system_pairs[c]['exp']
                     if (it['sent'] == system_pairs[c]['sent'] and
                        it['exp'].intersection(system_pairs[c]['exp'])):
                         s_p_new.append(system_pairs[c])
                         c += 1
                     else:
-                        #print "feil"
                         it['confidence'] = 0
                         s_p_new.append(it)
                         if DEBUG: print "skip", it
 
             system_pairs = s_p_new
-            #print "LEN GOLD: ", len(gold_lst)
 
             cur = False
             for item in system_pairs:
@@ -1183,21 +1085,13 @@ class evaluate:
         Return a list of pairs detected by system.
         For the gold expr, we can ignore the 
         """
-        #print len(lst)
-        #print len(results)
         
         system_pairs = []
-        #for label in self.labels:
-        #    system_pairs[label] = []
-        #print type(results)
         if isinstance(results, np.ndarray):
             cur = None
             curmax = None
             for i, item in enumerate(lst):
                 if cur and item['sent'] != cur['sent']:
-                    #print i, "ny", item
-                    #print s_p_imp
-                    #print s_p_w
                     system_pairs.append(cur)
                     cur = None
                 if not cur:
@@ -1222,7 +1116,6 @@ class evaluate:
         for item in lst:
             prec_sum += self.spancoverage(item['holder_sys'], item['holder_gold'])
             rec_sum += self.spancoverage(item['holder_gold'], item['holder_sys'])
-        #print len(lst)
         return {'p': prec_sum/len(lst), 'r': rec_sum/len(lst)}
 
     def spansetcoverage_o_p(self, lst, exptype=False):
@@ -1231,7 +1124,6 @@ class evaluate:
         prec_sum = 0.0
         rec_sum = 0.0
         for item in lst:
-            #print item
             rec_sum += self.spancoverage(item['holder_sys'], item['holder_gold'])
             prec_sum += self.spancoverage(item['holder_gold'], item['holder_sys'])
         if exptype:
@@ -1239,12 +1131,6 @@ class evaluate:
             sys_len = (counters['sys_len_new' + exptype] 
                     + counters['falsely_detected_exp' + exptype] 
                     - counters['expt_not_in_candidates' + exptype])
-            #if args.onlyinternals:
-            #    sys_len -= counters['holder_w_' + exptype]
-            #    sys_len -= counters['holder_implicit_' + exptype]
-            #    gold_len -= counters['holder_w_' + exptype]
-            #    gold_len -= counters['holder_implicit_' + exptype]
-            #sys_len = counters['sys_len_new' + exptype] + counters['falsely_detected_exp' + exptype]
             
         else:
             for exp in EXPTYPES:
@@ -1277,7 +1163,6 @@ def print_stats(tset, exptype=EXPTYPES, deprep=False):
     for exp in EXPTYPES:
         print exp + ":", len(f[exp])
         print exp + " w/imp:", len(f[exp + 'w'])
-        #print exp + " implicit:", len(f[exp + 'implicit'])
 
 def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=False, loadmodels=False, deprep=False, externals=True, predict=True, transitive=True):
     """
@@ -1287,8 +1172,6 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
     @param testset list of sentences with lists of tokens
     """
     system_pairs = []
-    #system_pairs
-    #system_pairs.extend(eval.get_system_pairs(stest['positions']['dse'], results))
     print "== cleaning lsts =="
     cleanupnonespanexpressions(testset)
     cleanholdercandidates(testset)
@@ -1308,14 +1191,9 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         vec, X, y = create_matrix(features[exp], labels[exp])
         if externals:
             vecw, Xw, yw = create_matrix(features[exp + 'w'], labels[exp + 'w'])
-            #print len(yw)
-            #print labels[exp + 'w']
-            #print labels[exp + 'implicit']
             vecimp, Ximp, yimp = create_matrix(features[exp + 'w'], labels[exp + 'implicit'])
-            #print len(yimp)
         if loadmodels:
             clf = read_model(loadmodels + exp)
-            # TODO load w/imp
         else:
             clf = create_model(X, y)
             if externals:
@@ -1326,7 +1204,6 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         print "== eval =="
         if deprep:
             print "== {} ==".format(deprep)
-        #print "ftest: {}".format(ftest)
         Xt, yt = transform_to_matrix(ftest[exp], ltest[exp], vec)
         if externals:
             Xtw, ytw = transform_to_matrix(ftest[exp + 'w'], ltest[exp + 'w'], vecw)
@@ -1334,21 +1211,18 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         results = clf.predict_proba(Xt)
         s_p_w = False
         s_p_imp = False
-        #counters['sys_len' + exp + 'w'] = len(stest['positions'][exp + 'w'])
         gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
         gold_p2 = copy.deepcopy(gold_p1)
         gold_p3 = copy.deepcopy(gold_p1)
         if clfw:
             resultsw = clfw.predict_proba(Xtw)
             s_p_w=ev.get_system_pairs_prob(stest['positions'][exp + 'w'], resultsw, gold_p1)
-            #print "s_p_w", len(s_p_w)
             if DEBUG:
                 print "RESULTSW"
                 print resultsw
         if clfimp:
             resultsimp = clfimp.predict_proba(Xtimp)
             s_p_imp=ev.get_system_pairs_prob(stest['positions'][exp + 'implicit'], resultsimp, gold_p2)
-            #print "s_p_imp", len(s_p_imp)
             if DEBUG:
                 print "RESULTSIMP"
                 print resultsimp
@@ -1358,7 +1232,6 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
             ssc_exp = ev.spansetcoverage_o_p(system_pairs_exp, exptype=exp)
             print "system exp - {}:\n{}".format(exp, prf_prettystring(ssc_exp))
         else:
-            #ssc_exp = ev.spansetcoverage_o(system_pairs_exp)
             ssc_exp = ev.spansetcoverage_o_p(system_pairs_exp, exptype=exp)
             print "gold exp - {}:\n{}".format(exp, prf_prettystring(ssc_exp))
         system_pairs.extend(system_pairs_exp)
@@ -1387,7 +1260,6 @@ def fscore(p, r):
     return 2 * p * r / (p + r)
 
 def create_gates(lst):
-    #if 'GATE' in lst[0][0]:
     #    raise Exception
     tmp_offset_start = 0
     tmp_offset_end = 0
@@ -1449,7 +1321,6 @@ def jointestandresult(tlst, rlst):
         if len(tsent) != len(rsent):
             raise ValueError("Sents not equal length: {}".format(c))
         c += 1
-        #print c
         newsent = []
         for ttoken, rtoken in itertools.izip(tsent, rsent):
             if ttoken['form'] != rtoken['form']:
@@ -1457,7 +1328,6 @@ def jointestandresult(tlst, rlst):
                 print "sent: {}\n{}\n "
                 print ttoken['form']
                 print rtoken['form']
-                #raise ValueError()
             newtoken = copy.deepcopy(ttoken)
             newtoken['PGATE'] = rtoken['PGATE']
             newtoken['Pdse'] = rtoken['Pdse']
@@ -1470,6 +1340,7 @@ def jointestandresult(tlst, rlst):
     return newlst
 
 def featurestats(lst, feature='synt_path'):
+    examplecount = 0
     featurecounter = Counter()
     featurecounters = {}
     for exp in EXPTYPES:
@@ -1487,11 +1358,25 @@ def featurestats(lst, feature='synt_path'):
             elif isinstance(pair[1], OrderedDict):
                 othercounters['OrderedDict'] += 1
             elif isinstance(pair[1], set):
+                othercounters['internal holders'] += 1
                 if feature == 'synt_path':
                     syntpath = syntactic_path(getex_head(pair[1], sent), getex_head(pair[0], sent),
                                                       sent)
                     featurecounter[syntpath] += 1
                     featurecounters[pair[2]][syntpath] += 1
+                    othercounters['Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
+                if feature == 'cand_head_pos':
+                    if examplecount < 5:
+                        if sent[getex_head(pair[1], sent)-1] == 'JJ':
+                            print '\n\n'
+                            print sent
+                            print '\n\n'
+                            examplecount += 1
+                    featurecounter[sent[getex_head(pair[1], sent)-1]['pos']] += 1
+                    featurecounters[pair[2]][sent[getex_head(pair[1], sent)-1]['pos']] += 1
+    if feature == 'synt_path':
+        othercounters['Average length (only arrows)'] = (
+                othercounters['Length (only arrows)'] / othercounters['internal holders'])
     return featurecounter, featurecounters, othercounters
 
 def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld=False):
@@ -1501,13 +1386,12 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
     @return 4-tuple with gold counts, system counts, freqtable and freqtable labels
     """
     # Sjekk de tilfellene der best gjør det bedre enn de andre
-    print feature
+    #print feature
     pair = {}
     notbest = None
     if not alld:
         notbest = set(deprlst)
         notbest.remove(best)
-        #print notbest
     ev = evaluate()
     freqtable = []
     freqtable_labels = []
@@ -1521,7 +1405,7 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
         freqtable_labels.append('sys_' + depr)
     freqtable.extend([[]])
     #print freqtable
-    print deprlst
+    #print deprlst
     if deprlst == DEPREPS:
         for pair['dt'], pair['sb'], pair['conll'] in itertools.izip(sp['dt'], sp['sb'], sp['conll']):
             _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld)
@@ -1576,13 +1460,9 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
                         gold_dct[depr][ex_head_pos_str] = 1
                     freqtable[i*2].append(ex_head_pos_str)
                 if feature == 'synt_path':
-                    #print sent
                     daughterlists_sent(sent)
-                    #holder_sys = getex_head(, sent)
                     s_synt_path = syntactic_path(s_id, ex_id, sent)
                     g_synt_path = syntactic_path(g_id, ex_id, sent)
-                    #print depr
-                    #print g_synt_path, s_synt_path
                     freqtable[i*2].append(g_synt_path)
                     freqtable[i*2+1].append(s_synt_path)
                     if s_synt_path in sys_dct[depr]:
@@ -1617,7 +1497,6 @@ def erroranalysis_print_tagged_sentences(freqtable, deplst, sp):
     for p in sp:
         if count < len(freqtable[-1]) and freqtable[-1][count] == p['sent']:
             print "\n{}\t".format(p['sent']),
-            #print p['holder_sys']
             for i, t in enumerate(deplst[p['sent']]):
                 if i+1 in p['exp']:
                     print "[{}]".format(t['form']),
@@ -1652,9 +1531,6 @@ def _erroranalysis_all(sc, threshold=0):
             
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-#    parser.add_argument("-i", dest="input_filename",
-#                        help="Input file", metavar="FILE",
-#                        type=lambda x: is_valid_file(parser, x))
     parser.add_argument("-load", "--load-json-file", dest="load json-file",
                         help="Load json-file",
                         metavar="FILE")
@@ -1727,7 +1603,6 @@ if __name__ == "__main__":
 
         
     if args.train or (args.eval and not (args.jtrain or args.loadmodels) ):
-        #if args.heldout: devset=False
         print "= TRAINSET ="
         trainsentlst = createfile(opinionexp=False, opinionholder=True,
                 devset=False if args.heldout else True, testset=False)
