@@ -441,8 +441,15 @@ def getex_head(ex_set, sent):
     # return first that has head outside phrase
     for num in ex_set:
         #print ": ", sent[num-1]['head']
-        if sent[num-1]['head'] not in ex_set:
-            return num
+        try:
+            if sent[num-1]['head'] not in ex_set:
+                return num
+        except:
+            print sent
+            print ex_set
+            print num
+            raise
+            
 
 def dom_ex_type(sent, head, transitive=True):
     """
@@ -997,7 +1004,7 @@ class evaluate:
 
     def spancoverage(self, span, spanprime):
         #print "span spanprime", span, spanprime
-        if isinstance(span, str) or isinstance(spanprime, str):
+        if isinstance(span, basestring) or isinstance(spanprime, basestring):
             #print span, " ... ", spanprime
             #return span == spanprime
             if span == spanprime:
@@ -1522,40 +1529,45 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
         for i, depr in enumerate(deprlst):
             sent = lst[depr][pair[depr]['sent']]
             ex_id = getex_head(pair[depr]['exp'], sent)
-            g_id = getex_head(pair[depr]['holder_gold'], sent)
-            s_id = getex_head(pair[depr]['holder_sys'], sent)
-            if feature == 'holder_head_pos':
-                g_head_pos_str = sent[g_id-1]['pos']
-                gold_dct[depr][g_head_pos_str] = gold_dct[depr].get(g_head_pos_str, 0) + 1
-                s_head_pos_str = sent[s_id-1]['pos']
-                sys_dct[depr][s_head_pos_str] = gold_dct[depr].get(s_head_pos_str, 0) + 1
-                freqtable[i*2].append(g_head_pos_str)
-                freqtable[i*2+1].append(s_head_pos_str)
-            if feature == 'ex_head_pos':
-                ex_head_pos_str = sent[ex_id-1]['pos']
-                if ex_head_pos_str in gold_dct[depr]:
-                    gold_dct[depr][ex_head_pos_str] += 1
-                else:
-                    gold_dct[depr][ex_head_pos_str] = 1
-                freqtable[i*2].append(ex_head_pos_str)
-            if feature == 'synt_path':
-                #print sent
-                daughterlists_sent(sent)
-                #holder_sys = getex_head(, sent)
-                s_synt_path = syntactic_path(s_id, ex_id, sent)
-                g_synt_path = syntactic_path(g_id, ex_id, sent)
-                #print depr
-                #print g_synt_path, s_synt_path
-                freqtable[i*2].append(g_synt_path)
-                freqtable[i*2+1].append(s_synt_path)
-                if s_synt_path in sys_dct[depr]:
-                    sys_dct[depr][s_synt_path] += 1
-                else:
-                    sys_dct[depr][s_synt_path] = 1
-                if g_synt_path in gold_dct[depr]:
-                    gold_dct[depr][g_synt_path] += 1
-                else:
-                    gold_dct[depr][g_synt_path] = 1
+            if (isinstance(pair[depr]['holder_gold'], basestring) or
+                isinstance(pair[depr]['holder_sys'], basestring)):
+                pass
+                # Analysis of explicit holders
+            else:
+                g_id = getex_head(pair[depr]['holder_gold'], sent)
+                s_id = getex_head(pair[depr]['holder_sys'], sent)
+                if feature == 'holder_head_pos':
+                    g_head_pos_str = sent[g_id-1]['pos']
+                    gold_dct[depr][g_head_pos_str] = gold_dct[depr].get(g_head_pos_str, 0) + 1
+                    s_head_pos_str = sent[s_id-1]['pos']
+                    sys_dct[depr][s_head_pos_str] = gold_dct[depr].get(s_head_pos_str, 0) + 1
+                    freqtable[i*2].append(g_head_pos_str)
+                    freqtable[i*2+1].append(s_head_pos_str)
+                if feature == 'ex_head_pos':
+                    ex_head_pos_str = sent[ex_id-1]['pos']
+                    if ex_head_pos_str in gold_dct[depr]:
+                        gold_dct[depr][ex_head_pos_str] += 1
+                    else:
+                        gold_dct[depr][ex_head_pos_str] = 1
+                    freqtable[i*2].append(ex_head_pos_str)
+                if feature == 'synt_path':
+                    #print sent
+                    daughterlists_sent(sent)
+                    #holder_sys = getex_head(, sent)
+                    s_synt_path = syntactic_path(s_id, ex_id, sent)
+                    g_synt_path = syntactic_path(g_id, ex_id, sent)
+                    #print depr
+                    #print g_synt_path, s_synt_path
+                    freqtable[i*2].append(g_synt_path)
+                    freqtable[i*2+1].append(s_synt_path)
+                    if s_synt_path in sys_dct[depr]:
+                        sys_dct[depr][s_synt_path] += 1
+                    else:
+                        sys_dct[depr][s_synt_path] = 1
+                    if g_synt_path in gold_dct[depr]:
+                        gold_dct[depr][g_synt_path] += 1
+                    else:
+                        gold_dct[depr][g_synt_path] = 1
     return gold_dct, sys_dct, freqtable, freqtable_labels
                     
 def erroranalysis_print_dct(dct, deprlst=DEPREPS):
@@ -1775,16 +1787,16 @@ if __name__ == "__main__":
         #stats_srl = read_jsonfile(DATA_PREFIX + '/out/2016-06-21-dump.json.stats.json')
         # sp = {}
         # deplst = {}
-        # sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/endelige/system_pairs-dt.json')
-        # sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/endelige/system_pairs-sb.json')
-        # sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/endelige/system_pairs-conll.json')
-        # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/endelige/system_pairs-conll-lthsrl-wo-semantic.json')
+        # sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-dt.json')
+        # sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-sb.json')
+        # sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll.json')
+        # # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
         # deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
         # deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
         # deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
-        # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
-        #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
-        #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+        # # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
+        # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
+        # gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='dt', feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
         #erroranalysis_print_dct(gdct)
         #erroranalysis_print_dct(sdct)
@@ -1802,11 +1814,14 @@ if __name__ == "__main__":
         #3a_j = jointestandresult(a, a_dt)
         #a_dt = readconll2009tolst(a_j, DATA_PREFIX + '/out/wsj_0768.conll.dt')
         #f,l,s = getfeaturesandlabels(a_dt, semantic=False)
+        lst = read_jsonfile(read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/goldex-o-new.json'))
+        lst = lst['test']
+        #f,l,s = getfeaturesandlabels(foo['train']['sb'], semantic=False)
         
         #minidevresult = readiob2(DATA_PREFIX + '/out/minidevresult.txt')
         ##minidevtest = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitestset.txt")
         ##dump_jsonfile(minidevtest, DATA_PREFIX + '/out/minidevtest.txt')
-        minidevtest = read_jsonfile(DATA_PREFIX + "/out/minidevtest.txt", object_hook=pickle_object)
+        #minidevtest = read_jsonfile(DATA_PREFIX + "/out/minidevtest.txt", object_hook=pickle_object)
         ##minidevtrain = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitrainset.txt")
         #minidevresult_copy = copy.deepcopy(minidevresult)
         #create_gates(minidevresult_copy)
@@ -1819,8 +1834,8 @@ if __name__ == "__main__":
         #minidevtest_sb = readconll2009tolst(tlst, 'minidevtest.conll.sb')
         # ###minidevtest_sb = readconll2009tolst(minidevtest, 'minidevtest.conll.sb')
 
-        minidevtest_sb = readconll2009tolst(minidevtest, 'minidevtest.conll.sb')
-        print_stats(minidevtest_sb, deprep='sb')
+        #minidevtest_sb = readconll2009tolst(minidevtest, 'minidevtest.conll.sb')
+        #print_stats(minidevtest_sb, deprep='sb')
 
         #cleanupnonespanexpressions(testset)
         #cleanholdercandidates(testset)
@@ -1830,8 +1845,9 @@ if __name__ == "__main__":
         #cleanholders(minidevtrain_sb)
         #
         #f,l,s = getfeaturesandlabels(minidevtrain_sb, semantic=False)
-        #ex = getexpressions_sent(sent)
         #sent = minidevtest_sb[6]
+        #sent = minidevtest[6]
+        #ex = getexpressions_sent(sent)
         #ex = getexpressions_sent(sent, predict=False)
         #pex = getexpressions_sent(sent, predict=True)
         #holders = getholders_sent_new(sent)
