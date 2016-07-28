@@ -1469,6 +1469,26 @@ def jointestandresult(tlst, rlst):
         newlst.append(newsent)
     return newlst
 
+def featurestats(lst, feature='synt_path'):
+    featurecounter = Counter()
+    othercounters = Counter()
+    for i, sent in enumerate(lst):
+        ex = getexpressions_sent(sent)
+        holder_dct = getholders_sent_new(sent)
+        holder_exp_pairs = getholder_exp_pairs_sent(sent, ex, holder_dct)
+        for pair in holder_exp_pairs:
+            if pair[1] == 'w':
+                othercounters['w'] += 1
+            elif pair[1] == 'implicit':
+                othercounters['implicit'] += 1
+            elif isinstance(pair[1], OrderedDict):
+                othercounters['OrderedDict'] += 1
+            elif isinstance(pair[1], set):
+                if feature == 'synt_path':
+                    featurecounter[syntactic_path(getex_head(pair[1], sent), getex_head(pair[0], sent),
+                                                      sent)] += 1
+    return featurecounter, othercounters
+
 def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld=False):
     """
     @param lst list of sentences with list of tokens
@@ -1671,8 +1691,21 @@ if __name__ == "__main__":
     parser.add_argument("-savejson", dest="savejson", metavar="FILE")
     parser.add_argument("-savemodels", dest="savemodels", metavar="FILE")
     parser.add_argument("-loadmodels", dest="loadmodels", metavar="FILE")
+    parser.add_argument("-loadjsonlist", metavar="FILE")
+    parser.add_argument("-featurestats")
     args = parser.parse_args()
 
+    if args.loadjsonlist:
+        print "= LOAD JSON ="
+        lst = read_jsonfile(args.loadjsonlist)
+
+    if args.featurestats:
+        fs, os = featurestats(lst, feature='synt_path')
+        print len(fs)
+        for k, v in os:
+            print k, v
+        
+        
     if args.train or (args.eval and not (args.jtrain or args.loadmodels) ):
         #if args.heldout: devset=False
         print "= TRAINSET ="
@@ -1814,8 +1847,8 @@ if __name__ == "__main__":
         #3a_j = jointestandresult(a, a_dt)
         #a_dt = readconll2009tolst(a_j, DATA_PREFIX + '/out/wsj_0768.conll.dt')
         #f,l,s = getfeaturesandlabels(a_dt, semantic=False)
-        lst = read_jsonfile(read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/goldex-o-new.json'))
-        lst = lst['test']
+        ## lst = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/goldex-o-new.json')
+        #lst = lst['test']
         #f,l,s = getfeaturesandlabels(foo['train']['sb'], semantic=False)
         
         #minidevresult = readiob2(DATA_PREFIX + '/out/minidevresult.txt')
