@@ -625,7 +625,6 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
         for exp_pair in holder_exp_pairs_use:
             expt = exp_pair[2]
             cand_exists = True
-            goldcandidatehead = False
             holder_set = True
             # Categorise 
             if isinstance(exp_pair[1], str):
@@ -1157,6 +1156,7 @@ class evaluate:
                 gold_len += counters['gold_len_new' + exp] 
                 sys_len += counters['sys_len_new' + exp] 
             sys_len += counters['falsely_detected_exp']
+            sys_len -= counters['expt_not_in_candidates']
 
         if DEBUGNOW:
             print "exptype: {}".format(exptype)
