@@ -220,10 +220,13 @@ def getholder_exp_pairs_sent(sent, expr, holders, exptype=False, isolate_exp=Tru
             if tmp: 
                 if tmp in holders:
                     if isinstance(holders[tmp], OrderedDict):
+                        coref = []
                         for h in holders[tmp].values():
-                            tuples.append((gate['token_id'], h['token_id'], exptype, holders[tmp]))
+                            coref.append(h['token_id'])
+                        for h in holders[tmp].values():
+                            tuples.append((gate['token_id'], h['token_id'], exptype, coref))
                     else:
-                        tuples.append((gate['token_id'], holders[tmp]['token_id'], exptype, holders[tmp]))
+                        tuples.append((gate['token_id'], holders[tmp]['token_id'], exptype, False))
                 elif tmp == 'writer' or tmp == 'w':
                     #print "w"
                     tuples.append((gate['token_id'], 'w', exptype, False))
@@ -1119,9 +1122,15 @@ class evaluate:
             rec_sum += self.spancoverage(item['holder_gold'], item['holder_sys'])
         return {'p': prec_sum/len(lst), 'r': rec_sum/len(lst)}
 
-    def check_coref(self, lst):
-        print lst
-        raise
+    def check_coref(self, coref, sys):
+        maxcxh = -1
+        argmaxcxh = False
+        for item in coref:
+            tmp = self.spancoverage(item, sys)
+            if tmp > maxcxh:
+                maxcxh = tmp
+                argmaxcxh = item
+        return argmaxcxh
 
     def spansetcoverage_o_p(self, lst, exptype=False):
         sys_len = 0
@@ -1129,8 +1138,12 @@ class evaluate:
         prec_sum = 0.0
         rec_sum = 0.0
         for item in lst:
-            rec_sum += self.spancoverage(item['holder_sys'], item['holder_gold'])
-            prec_sum += self.spancoverage(item['holder_gold'], item['holder_sys'])
+            if 'coref_gold' in item and len(item['coref_gold']) > 1:
+                holder_gold = self.check_coref(item['coref_gold'], item['holder_sys'])
+            else:
+                holder_gold = item['holder_gold']
+            rec_sum += self.spancoverage(item['holder_sys'], holder_gold)
+            prec_sum += self.spancoverage(holder_gold, item['holder_sys'])
         if exptype:
             gold_len = counters['gold_len_new' + exptype] 
             sys_len = (counters['sys_len_new' + exptype] 
@@ -1727,18 +1740,18 @@ if __name__ == "__main__":
         DEBUGNOW = True
         print "Interactive"
         #stats_srl = read_jsonfile(DATA_PREFIX + '/out/2016-06-21-dump.json.stats.json')
-        sp = {}
-        deplst = {}
-        sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-dt.json')
-        sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-sb.json')
-        sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll.json')
-        # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
-        deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
-        deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
-        deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
-        # # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
-        # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
-        gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='dt', feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+        # sp = {}
+        # deplst = {}
+        # sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-dt.json')
+        # sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-sb.json')
+        # sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll.json')
+        # # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
+        # deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
+        # deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
+        # deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
+        # # # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
+        # # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
+        # gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='dt', feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
         #erroranalysis_print_dct(gdct)
         #erroranalysis_print_dct(sdct)
@@ -1763,18 +1776,18 @@ if __name__ == "__main__":
         #minidevresult = readiob2(DATA_PREFIX + '/out/minidevresult.txt')
         ##minidevtest = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitestset.txt")
         ##dump_jsonfile(minidevtest, DATA_PREFIX + '/out/minidevtest.txt')
-        #minidevtest = read_jsonfile(DATA_PREFIX + "/out/minidevtest.txt", object_hook=pickle_object)
+        minidevtest = read_jsonfile(DATA_PREFIX + "/out/minidevtest.txt", object_hook=pickle_object)
         ##minidevtrain = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitrainset.txt")
         #minidevresult_copy = copy.deepcopy(minidevresult)
         #create_gates(minidevresult_copy)
         ##minidevresult_copy_sb = readconll2009tolst(minidevresult_copy, 'minidevtest.conll.sb')
         #tlst = jointestandresult(minidevtest, minidevresult_copy)
-        #minidevtrain = read_jsonfile(DATA_PREFIX + "/out/minidevtrain.json", object_hook=json_slice)
-        #minidevtrain_sb = readconll2009tolst(minidevtrain, 'minidevtrain.conll.sb')
+        minidevtrain = read_jsonfile(DATA_PREFIX + "/out/minidevtrain.json", object_hook=json_slice)
+        minidevtrain_sb = readconll2009tolst(minidevtrain, DATA_PREFIX + '/out/minidevtrain.conll.sb')
         ##minidevtrain_dt = readconll2009tolst(minidevtrain, 'minidevtrain.conll.dt')
         ##minidevtrain_conll = readconll2009tolst(minidevtrain, 'minidevtrain.conll.conll')
         #minidevtest_sb = readconll2009tolst(tlst, 'minidevtest.conll.sb')
-        # ###minidevtest_sb = readconll2009tolst(minidevtest, 'minidevtest.conll.sb')
+        minidevtest_sb = readconll2009tolst(minidevtest, DATA_PREFIX + '/out/minidevtest.conll.sb')
 
         #minidevtest_sb = readconll2009tolst(minidevtest, 'minidevtest.conll.sb')
         #print_stats(minidevtest_sb, deprep='sb')
@@ -1798,7 +1811,7 @@ if __name__ == "__main__":
         #x = extolst(pex)
         #tf,tl,ts = getfeaturesandlabels(minidevtest_sb[0:10], semantic=False)
         #tf,tl,ts = getfeaturesandlabels(minidevtest_sb, semantic=False)
-        #print_eval(minidevtrain_sb, minidevtest_sb, semantic=False)
+        print_eval(minidevtrain_sb, minidevtest_sb, semantic=False)
         #print_eval(minidevtrain_sb, minidevtest_sb, semantic=False, predict=False)
 
         #trlst = read_jsonfile(DATA_PREFIX + '/out/holder/devtrain.json')
