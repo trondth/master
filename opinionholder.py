@@ -599,7 +599,7 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
                 # first located e' that corresponded to e
                 argmaxcxe = 0 # at least some overlap
                 if args.argmaxcxe:
-                    argmaxcxe = args.argmaxcxe
+                    argmaxcxe = int(args.argmaxcxe)
                 current_pair = None
                 for exp_pair_i, exp_pair in enumerate(holder_exp_pairs):
                     #argmax c(x,e) regardless of exp type j&m 7.1.1
