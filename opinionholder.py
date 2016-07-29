@@ -221,15 +221,15 @@ def getholder_exp_pairs_sent(sent, expr, holders, exptype=False, isolate_exp=Tru
                 if tmp in holders:
                     if isinstance(holders[tmp], OrderedDict):
                         for h in holders[tmp].values():
-                            tuples.append((gate['token_id'], h['token_id'], exptype))
+                            tuples.append((gate['token_id'], h['token_id'], exptype, holders[tmp]))
                     else:
-                        tuples.append((gate['token_id'], holders[tmp]['token_id'], exptype))
+                        tuples.append((gate['token_id'], holders[tmp]['token_id'], exptype, holders[tmp]))
                 elif tmp == 'writer' or tmp == 'w':
                     #print "w"
-                    tuples.append((gate['token_id'], 'w', exptype))
+                    tuples.append((gate['token_id'], 'w', exptype, False))
                 else: #Implicit
                     #print "i"
-                    tuples.append((gate['token_id'], 'implicit', exptype))
+                    tuples.append((gate['token_id'], 'implicit', exptype, False))
     return tuples
 
 def getholders_sent(sent):
@@ -237,6 +237,7 @@ def getholders_sent(sent):
     @param sent List of tokens in sentence
     @return List of opinion holders in sent
     """
+    raise
     holders = OrderedDict()
     for i, token in enumerate(sent):
         for gate in token['GATE']:
@@ -583,8 +584,6 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
         holder_dct = getholders_sent_new(sent)
         holder_exp_pairs = getholder_exp_pairs_sent(sent, ex, holder_dct, test=predict)
         count_gold(holder_exp_pairs) 
-        if predict and DEBUG:
-            print "hep: ", holder_exp_pairs
         if True: # syntactic_path
             paths = getpaths_sent(getgraph_sent(sent))
         else:
@@ -608,7 +607,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                         argmaxcxe = cxe
                         current_pair = exp_pair
                 if current_pair:
-                    holder_exp_pairs_sys.append((p['token_id'], current_pair[1], current_pair[2]))
+                    holder_exp_pairs_sys.append((p['token_id'], current_pair[1], current_pair[2], current_pair[3]))
                 else:
                     counters['falsely_detected_exp'] += 1
                     counters['falsely_detected_exp' + p['expt']] += 1
@@ -621,6 +620,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
         for exp_pair in holder_exp_pairs_use:
             expt = exp_pair[2]
             cand_exists = True
+            goldcandidatehead = False
             holder_set = True
             # Categorise 
             if isinstance(exp_pair[1], str):
@@ -645,6 +645,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                     cand_exists = False
                     counters['ignore_count'] += 1
                     counters['holder not in candidates - special case'] += 1
+            #if cand_exists:
             # For prediction:
             elif isinstance(exp_pair[1], OrderedDict):
                 if expt in candidates:
@@ -713,7 +714,9 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
                             pos[expt].append({'sent': sent_i,
                                                     'exp': exp_pair[0],
                                                     'holder_sys': get_subtree(sent, cand, transitive=True),
-                                                    'holder_gold': exp_pair[1]}) 
+                                                    'holder_gold': exp_pair[1],
+                                                    'coref_gold': exp_pair[3]
+                                                    }) 
 
                             # features
                             ex_head = getex_head(exp_pair[0], sent)
@@ -907,7 +910,7 @@ def get_subtree(sent, num, transitive=False):
     daughters = sent[num-1]['daughters']
     if transitive:
         for d in daughters:
-            span = span.union(get_subtree(sent, d))
+            span = span.union(get_subtree(sent, d, transitive=transitive))
     else:
         span = span.union(daughters)
     return span
@@ -1046,8 +1049,6 @@ class evaluate:
                 cur.update({'confidence': curmax})
                 system_pairs.append(cur)
 
-            
-
             c = 0
             s_p_new = []
             for it in gold_lst:
@@ -1117,6 +1118,10 @@ class evaluate:
             prec_sum += self.spancoverage(item['holder_sys'], item['holder_gold'])
             rec_sum += self.spancoverage(item['holder_gold'], item['holder_sys'])
         return {'p': prec_sum/len(lst), 'r': rec_sum/len(lst)}
+
+    def check_coref(self, lst):
+        print lst
+        raise
 
     def spansetcoverage_o_p(self, lst, exptype=False):
         sys_len = 0
@@ -1367,7 +1372,7 @@ def featurestats(lst, feature='synt_path'):
                     othercounters['Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
                 if feature == 'cand_head_pos':
                     if examplecount < 5:
-                        if sent[getex_head(pair[1], sent)-1] == 'JJ':
+                        if sent[getex_head(pair[1], sent)-1]['pos'] == 'JJ':
                             print '\n\n'
                             print sent
                             print '\n\n'
@@ -1408,6 +1413,14 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
     #print deprlst
     if deprlst == DEPREPS:
         for pair['dt'], pair['sb'], pair['conll'] in itertools.izip(sp['dt'], sp['sb'], sp['conll']):
+            if (pair['dt']['exp'] != pair['sb']['exp'] or
+                    pair['conll']['exp'] != pair['sb']['exp'] or
+                    pair['conll']['exp'] != pair['dt']['exp']):
+                counters['feil'] += 1
+            if pair['conll']['sent'] == 59:
+                print "PAIR", pair
+                for i, t in enumerate(lst['sb'][59]):
+                    print i+1, t['head'], t['form'], t['pos']
             _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld)
     elif deprlst == ['conll', 'srl']:
         for pair['srl'] in sp['srl']:
@@ -1417,21 +1430,22 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
                     pair['srl']['exp'] == pair['conll']['exp'] and
                     pair['srl']['sent'] == pair['conll']['sent']):
                     _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld)
+    print counters
     return _erroranalysis_sort_dct(gold_dct, deprlst=deprlst), _erroranalysis_sort_dct(sys_dct, deprlst=deprlst), freqtable, freqtable_labels
 
 def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=None, alld=False):
-    if pair['conll']['sent'] == 528:
+    if DEBUG and pair['conll']['sent'] == 528:
         print pair
     sc = {}
     for depr in deprlst:
         sc[depr] = ev.spancoverage(pair[depr]['holder_sys'], pair[depr]['holder_gold'])
-        if pair['conll']['sent'] == 528:
+        if DEBUG and pair['conll']['sent'] == 528:
             print sc, alld
     if alld:
         error_pair = _erroranalysis_all(sc)
     else:
         error_pair = _erroranalysis_better(sc, best, notbest)
-        if pair['conll']['sent'] == 528:
+        if DEBUG and pair['conll']['sent'] == 528:
             print error_pair
     if error_pair:
         freqtable[-1].append(pair[best]['sent'])
@@ -1713,18 +1727,18 @@ if __name__ == "__main__":
         DEBUGNOW = True
         print "Interactive"
         #stats_srl = read_jsonfile(DATA_PREFIX + '/out/2016-06-21-dump.json.stats.json')
-        # sp = {}
-        # deplst = {}
-        # sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-dt.json')
-        # sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-sb.json')
-        # sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll.json')
-        # # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
-        # deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
-        # deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
-        # deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
+        sp = {}
+        deplst = {}
+        sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-dt.json')
+        sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-sb.json')
+        sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll.json')
+        # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
+        deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
+        deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
+        deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
         # # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
         # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
-        # gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='dt', feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+        gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='dt', feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
         #erroranalysis_print_dct(gdct)
         #erroranalysis_print_dct(sdct)
