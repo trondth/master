@@ -99,7 +99,7 @@ def getexpressions_sent(sent, predict=False):
                         expr['dse'][gate['line_id']]['token_id'].add(i+1)
     return expr
 
-def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False, restrict_all=False, allnpsashc=False, predict=False): 
+def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=False, allnpsashc=False, predict=False): 
     """
     Tags holder candidates for the different types of expressions.
     Head of noun phrases are selected as holder candidates for an
@@ -107,7 +107,7 @@ def tagholdercandidates_sent(sent, transitive=True, overlappingcandidates=False,
     type.
     
     @param sent List of tokens in sent
-    @param transitive If daughter
+    @param restrict_all Restrict candidates to NPs that are not part of any expression
     @param duplicates Ignore holder candidates from subtree of a holder
     """
     if args.overlappingcandidates:
@@ -451,7 +451,7 @@ def getex_head(ex_set, sent):
             raise
             
 
-def dom_ex_type(sent, head, transitive=True):
+def dom_ex_type(sent, head, transitive=False):
     """
     Return a string representing the expression type(s) of head, if exists.
 
@@ -547,7 +547,7 @@ def count_gold(lst):
             exp_seen_set = exp_seen_set | item[0]
             counters['gold_len_ignoring_overlap' + item[2]] += 1
 
-def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, predict=True):
+def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
     """
     To use with evaluation. For each expression, it will return both the corresponding gold and predicted holder.
     TODO - a version of this function without returning gold holders
@@ -582,7 +582,7 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
         daughterlists_sent(sent)
         ex = getexpressions_sent(sent)
         pex = getexpressions_sent(sent, predict=predict)
-        tagholdercandidates_sent(sent, transitive=transitive, predict=predict)
+        tagholdercandidates_sent(sent, predict=predict)
         candidates = getholdercandidates_list_sent(sent)
         holder_dct = getholders_sent_new(sent)
         holder_exp_pairs = getholder_exp_pairs_sent(sent, ex, holder_dct, test=predict)
@@ -597,7 +597,9 @@ def getfeaturesandlabels(lst, exptype=False, transitive=True, semantic=True, pre
 
             for c, p in enumerate(extolst(pex, gatekey='PGATE')):
                 # first located e' that corresponded to e
-                argmaxcxe = -1
+                argmaxcxe = 0 # at least some overlap
+                if args.argmaxcxe:
+                    argmaxcxe = args.argmaxcxe
                 current_pair = None
                 for exp_pair_i, exp_pair in enumerate(holder_exp_pairs):
                     #argmax c(x,e) regardless of exp type j&m 7.1.1
@@ -907,7 +909,7 @@ def count_span_shorter_than_token(lst):
         sent_n += 1
     return {'sents': sents, 'tokens': tokens, 'spans': spans, 'tokens_not_0': tokens_not_0}
             
-def get_subtree(sent, num, transitive=False):
+def get_subtree(sent, num, transitive=True):
     # Gets the whole subtree, this is a problem with holders like michael hirsch ..., sent 1271 devtestset
     span = set([num])
     daughters = sent[num-1]['daughters']
@@ -1172,17 +1174,16 @@ def print_tikzdep(sent):
             print "\depedge{" + t['head'] + "}{" + str(i+1) + "}{" + t['deprel'] + '}'
 
 def print_stats(tset, exptype=EXPTYPES, deprep=False):
-    transitive = args.transitive
     cleanupnonespanexpressions(tset)
     cleanholders(tset)
     cleanholdercandidates(tset)
     print "== deprep", deprep, "=="
-    f, l, s = getfeaturesandlabels(tset, transitive=transitive, semantic=False)
+    f, l, s = getfeaturesandlabels(tset, semantic=False)
     for exp in EXPTYPES:
         print exp + ":", len(f[exp])
         print exp + " w/imp:", len(f[exp + 'w'])
 
-def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=False, loadmodels=False, deprep=False, externals=True, predict=True, transitive=True):
+def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=False, loadmodels=False, deprep=False, externals=True, predict=True):
     """
     Runs the system, prints P/R/F to stdout.
 
@@ -1200,10 +1201,10 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
     
     print "== train =="
     ev = evaluate()
-    features, labels, stats = getfeaturesandlabels(trainset, transitive=transitive, semantic=semantic, predict=False)
+    features, labels, stats = getfeaturesandlabels(trainset, semantic=semantic, predict=False)
     print "== test =="
     counters.clear()
-    ftest, ltest, stest = getfeaturesandlabels(testset, transitive=transitive, semantic=semantic, predict=predict)
+    ftest, ltest, stest = getfeaturesandlabels(testset, semantic=semantic, predict=predict)
     print counters
     for exp in exptypes:
         vec, X, y = create_matrix(features[exp], labels[exp])
@@ -1591,7 +1592,7 @@ if __name__ == "__main__":
     parser.add_argument("-ctrain", dest="ctrain", metavar="FILE")
     parser.add_argument("-ctest", dest="ctest", metavar="FILE")
     parser.add_argument("-lthsrl", dest="lthsrl", action='store_true')
-    parser.add_argument("-transitive", dest="transitive", help='unused', action='store_true')
+    parser.add_argument("-argmaxcxe", help='a value below 0 will include system exp without overlap to a gold exp')
     parser.add_argument("-stats", "--stats")
     parser.add_argument("-overlappingcandidates", dest="overlappingcandidates", action='store_true')
     parser.add_argument("-restrict_all", action='store_true')
@@ -1723,11 +1724,11 @@ if __name__ == "__main__":
         stats = {}
         if args.lthsrl:
             #dump_jsonfile(testsentlst, 'testsentlistdump.json')
-            stats['notsem'] = print_eval(trainsentlst, testsentlst, semantic=False, loadmodels=args.loadmodels, savemodels=args.savemodels, deprep='conll-lthsrl-wo-semantic', predict=args.predict, transitive=args.transitive)
-            stats['sem'] = print_eval(trainsentlst, testsentlst, semantic=True, loadmodels=args.loadmodels, savemodels=args.savemodels, deprep='conll-lthsrl-with-semantic', predict=args.predict, transitive=args.transitive)
+            stats['notsem'] = print_eval(trainsentlst, testsentlst, semantic=False, loadmodels=args.loadmodels, savemodels=args.savemodels, deprep='conll-lthsrl-wo-semantic', predict=args.predict)
+            stats['sem'] = print_eval(trainsentlst, testsentlst, semantic=True, loadmodels=args.loadmodels, savemodels=args.savemodels, deprep='conll-lthsrl-with-semantic', predict=args.predict)
         else:
             for dr in DEPREPS:
-                stats[dr] = print_eval(trainsentlsts[dr], testsentlsts[dr], semantic=False, loadmodels=args.loadmodels, savemodels=args.savemodels, deprep=dr, predict=args.predict, transitive=args.transitive)
+                stats[dr] = print_eval(trainsentlsts[dr], testsentlsts[dr], semantic=False, loadmodels=args.loadmodels, savemodels=args.savemodels, deprep=dr, predict=args.predict)
 
     if args.savejson:
         print "= SAVE JSON-FILE ="
