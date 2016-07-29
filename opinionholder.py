@@ -559,7 +559,8 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
         predict = False
         
     stats = {'holders_not_in_candidates': [],
-             'position': {}}
+             'position': {},
+             'expt_not_in_candidates': []}
     if not exptype:
         exptypelist = EXPTYPES
     features = {}
@@ -640,7 +641,6 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
                             if exp_pair[1].intersection(get_subtree(sent, cand, transitive=True)):
                                 cand_exists = True
                         if not cand_exists:
-                            counters['ignore_count'] += 1
                             counters['holder_not_in_candidates'] += 1
                             counters['holder_not_in_candidates' + exp_pair[2]] += 1
                             stats['holders_not_in_candidates'].append({'candidates': candidates[expt],
@@ -657,11 +657,18 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
                     if not holdermax[0]:
                         cand_exists = False
                         counters['ignore_count'] += 1
+                else:
+                    cand_exists = False
+                    counters['expt_not_in_candidates - new'] += 1
+                    stats['expt_not_in_candidates'].append({'sent': sent_i,
+                                                               'exp_pair': exp_pair})
             else:
                 raise Exception('exp_pair[1] of unknown type: {}'.format(exp_pair[1]))
 
-            if True and cand_exists:
-
+            if not predict or cand_exists:
+                # we don't need to count false predicted holders, the p. sum is already
+                # made, but we need these for training
+                
                 # ext-classifiers (w/imp)
                 # labels
                 if exp_pair[1] == 'w':
@@ -1147,16 +1154,18 @@ class evaluate:
             prec_sum += self.spancoverage(holder_gold, item['holder_sys'])
         if exptype:
             gold_len = counters['gold_len_new' + exptype] 
-            sys_len = (counters['sys_len_new' + exptype] 
-                    + counters['falsely_detected_exp' + exptype] 
-                    - counters['expt_not_in_candidates' + exptype])
+            sys_len = (counters['sys_len' + exptype] 
+                    + counters['falsely_detected_exp' + exptype])
+                    #+ counters['holder_not_in_candidates' + exptype] )
+                    #- counters['expt_not_in_candidates' + exptype])
             
         else:
             for exp in EXPTYPES:
                 gold_len += counters['gold_len_new' + exp] 
-                sys_len += counters['sys_len_new' + exp] 
+                sys_len += counters['sys_len' + exp] 
             sys_len += counters['falsely_detected_exp']
-            sys_len -= counters['expt_not_in_candidates']
+            #sys_len += counters['holder_not_in_candidates']
+            #sys_len -= counters['expt_not_in_candidates']
 
         if DEBUGNOW:
             print "exptype: {}".format(exptype)
@@ -1247,6 +1256,10 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
                 print resultsimp
         s_p_int=ev.get_system_pairs_prob(stest['positions'][exp], results, gold_p3)
         system_pairs_exp = ev.merge_system_pairs(s_p_int, s_p_imp=s_p_imp, s_p_w=s_p_w)
+        counters['system_pairs_all' + exp] = len(system_pairs_exp)
+        for pair in system_pairs_exp:
+            if 'confidence' in pair and pair['confidence'] > 0:
+                counters['system_pairs' + exp] += 1
         if predict:
             ssc_exp = ev.spansetcoverage_o_p(system_pairs_exp, exptype=exp)
             print "system exp - {}:\n{}".format(exp, prf_prettystring(ssc_exp))
@@ -1385,7 +1398,7 @@ def featurestats(lst, feature='synt_path'):
                     featurecounters[pair[2]][syntpath] += 1
                     othercounters['Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
                 if feature == 'cand_head_pos':
-                    if examplecount < 5:
+                    if DEBUG and examplecount < 5:
                         if sent[getex_head(pair[1], sent)-1]['pos'] == 'JJ':
                             print '\n\n'
                             print sent
@@ -1812,7 +1825,7 @@ if __name__ == "__main__":
         #x = extolst(pex)
         #tf,tl,ts = getfeaturesandlabels(minidevtest_sb[0:10], semantic=False)
         #tf,tl,ts = getfeaturesandlabels(minidevtest_sb, semantic=False)
-        print_eval(minidevtrain_sb, minidevtest_sb, semantic=False)
+        #print_eval(minidevtrain_sb, minidevtest_sb, semantic=False)
         #print_eval(minidevtrain_sb, minidevtest_sb, semantic=False, predict=False)
 
         #trlst = read_jsonfile(DATA_PREFIX + '/out/holder/devtrain.json')
