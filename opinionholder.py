@@ -1154,7 +1154,7 @@ class evaluate:
             prec_sum += self.spancoverage(holder_gold, item['holder_sys'])
         if exptype:
             gold_len = counters['gold_len_new' + exptype] 
-            sys_len = (counters['sys_len' + exptype] 
+            sys_len = (counters['sys_len_new' + exptype] 
                     + counters['falsely_detected_exp' + exptype])
                     #+ counters['holder_not_in_candidates' + exptype] )
                     #- counters['expt_not_in_candidates' + exptype])
@@ -1162,7 +1162,7 @@ class evaluate:
         else:
             for exp in EXPTYPES:
                 gold_len += counters['gold_len_new' + exp] 
-                sys_len += counters['sys_len' + exp] 
+                sys_len += counters['sys_len_new' + exp] 
             sys_len += counters['falsely_detected_exp']
             #sys_len += counters['holder_not_in_candidates']
             #sys_len -= counters['expt_not_in_candidates']
