@@ -629,6 +629,7 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
             holder_set = True
             # Categorise 
             if isinstance(exp_pair[1], str):
+                #if predict:
                 holder_set = False
             elif isinstance(exp_pair[1], set):
                 # om holder ikke er hc
@@ -1156,16 +1157,16 @@ class evaluate:
             gold_len = counters['gold_len_new' + exptype] 
             sys_len = (counters['sys_len_new' + exptype] 
                     + counters['falsely_detected_exp' + exptype])
-                    #+ counters['holder_not_in_candidates' + exptype] )
-                    #- counters['expt_not_in_candidates' + exptype])
+            if False: # args.onlyinternals:
+                sys_len -= counters['expt_not_in_candidates' + exptype]
             
         else:
             for exp in EXPTYPES:
                 gold_len += counters['gold_len_new' + exp] 
                 sys_len += counters['sys_len_new' + exp] 
             sys_len += counters['falsely_detected_exp']
-            #sys_len += counters['holder_not_in_candidates']
-            #sys_len -= counters['expt_not_in_candidates']
+            if False: # args.onlyinternals:
+                sys_len -= counters['expt_not_in_candidates']
 
         if DEBUGNOW:
             print "exptype: {}".format(exptype)
@@ -1415,6 +1416,9 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
     """
     @param lst list of sentences with list of tokens
     @param sp list of system pairs (output from eval)
+    @param feature feature, for erroranalysis 
+    @alld if set, then we will check where all depreps make errors
+    @best check when the other depreps guess wrong and best guesses correct
     @return 4-tuple with gold counts, system counts, freqtable and freqtable labels
     """
     # Sjekk de tilfellene der best gjør det bedre enn de andre
@@ -1790,18 +1794,18 @@ if __name__ == "__main__":
         #minidevresult = readiob2(DATA_PREFIX + '/out/minidevresult.txt')
         ##minidevtest = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitestset.txt")
         ##dump_jsonfile(minidevtest, DATA_PREFIX + '/out/minidevtest.txt')
-        minidevtest = read_jsonfile(DATA_PREFIX + "/out/minidevtest.txt", object_hook=pickle_object)
-        ##minidevtrain = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitrainset.txt")
-        #minidevresult_copy = copy.deepcopy(minidevresult)
-        #create_gates(minidevresult_copy)
-        ##minidevresult_copy_sb = readconll2009tolst(minidevresult_copy, 'minidevtest.conll.sb')
-        #tlst = jointestandresult(minidevtest, minidevresult_copy)
-        minidevtrain = read_jsonfile(DATA_PREFIX + "/out/minidevtrain.json", object_hook=json_slice)
-        minidevtrain_sb = readconll2009tolst(minidevtrain, DATA_PREFIX + '/out/minidevtrain.conll.sb')
-        ##minidevtrain_dt = readconll2009tolst(minidevtrain, 'minidevtrain.conll.dt')
-        ##minidevtrain_conll = readconll2009tolst(minidevtrain, 'minidevtrain.conll.conll')
-        #minidevtest_sb = readconll2009tolst(tlst, 'minidevtest.conll.sb')
-        minidevtest_sb = readconll2009tolst(minidevtest, DATA_PREFIX + '/out/minidevtest.conll.sb')
+        # minidevtest = read_jsonfile(DATA_PREFIX + "/out/minidevtest.txt", object_hook=pickle_object)
+        # ##minidevtrain = createfile(opinionexp=False, opinionholder=True, doclistfile="/config/doclists/minitrainset.txt")
+        # #minidevresult_copy = copy.deepcopy(minidevresult)
+        # #create_gates(minidevresult_copy)
+        # ##minidevresult_copy_sb = readconll2009tolst(minidevresult_copy, 'minidevtest.conll.sb')
+        # #tlst = jointestandresult(minidevtest, minidevresult_copy)
+        # minidevtrain = read_jsonfile(DATA_PREFIX + "/out/minidevtrain.json", object_hook=json_slice)
+        # minidevtrain_sb = readconll2009tolst(minidevtrain, DATA_PREFIX + '/out/minidevtrain.conll.sb')
+        # ##minidevtrain_dt = readconll2009tolst(minidevtrain, 'minidevtrain.conll.dt')
+        # ##minidevtrain_conll = readconll2009tolst(minidevtrain, 'minidevtrain.conll.conll')
+        # #minidevtest_sb = readconll2009tolst(tlst, 'minidevtest.conll.sb')
+        # minidevtest_sb = readconll2009tolst(minidevtest, DATA_PREFIX + '/out/minidevtest.conll.sb')
 
         #minidevtest_sb = readconll2009tolst(minidevtest, 'minidevtest.conll.sb')
         #print_stats(minidevtest_sb, deprep='sb')
