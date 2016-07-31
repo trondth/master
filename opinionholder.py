@@ -99,7 +99,7 @@ def getexpressions_sent(sent, predict=False):
                         expr['dse'][gate['line_id']]['token_id'].add(i+1)
     return expr
 
-def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=False, allnpsashc=False, predict=False): 
+def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False): 
     """
     Tags holder candidates for the different types of expressions.
     Head of noun phrases are selected as holder candidates for an
@@ -107,15 +107,13 @@ def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=Fal
     type.
     
     @param sent List of tokens in sent
-    @param restrict_all Restrict candidates to NPs that are not part of any expression
     @param duplicates Ignore holder candidates from subtree of a holder
     """
-    if args.overlappingcandidates:
-        overlappingcandidates = True
-    if args.allnpsashc:
+    if args.notoverlappingcandidates:
+        notoverlappingcandidates = True
+    if args.restrict == 'sameexp':
+        # Restrict holder candidates when building features instead
         allnpsashc = True
-    if args.restrict_all:
-        restrict_all = True
     head_num = False
     for i, token in enumerate(sent):
         if 'daughters' not in token:
@@ -129,7 +127,7 @@ def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=Fal
                 tmp_token = sent[head_id-1]
                 if not ('head' in tmp_token and
                         (tmp_token['pos'][:2] == 'NN' or tmp_token['pos'][:3] == 'PRP')):
-                    if restrict_all:
+                    if args.restrict == 'all':
                         add_this = True
                     for exptype in EXPTYPES:
                         if not allnpsashc: 
@@ -139,7 +137,7 @@ def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=Fal
                                 tmpexp = exptype
                             try:
                                 if not sent[i][tmpexp]:
-                                    if not restrict_all:
+                                    if not args.restrict == 'all':
                                         token['holder_candidate'].add(exptype)
                                 else:
                                     add_this = False
@@ -148,12 +146,12 @@ def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=Fal
                                 raise
                         else:
                             token['holder_candidate'].add(exptype)
-                    if restrict_all and add_this:
+                    if args.restrict == 'all' and add_this:
                         for exptype in EXPTYPES:
                             token['holder_candidate'].add(exptype)
 
             else:
-                if restrict_all:
+                if args.restrict == 'all':
                     add_this = True
                 for exptype in EXPTYPES:
                     #if i+1 not in rsets[exptype]:
@@ -163,16 +161,16 @@ def tagholdercandidates_sent(sent, overlappingcandidates=False, restrict_all=Fal
                         else:
                             tmpexp = exptype
                         if not sent[i][tmpexp]:
-                            if not restrict_all:
+                            if args.restrict != 'all':
                                 token['holder_candidate'].add(exptype)
                         else:
                             add_this = False
                     else:
                         token['holder_candidate'].add(exptype)
-                if restrict_all:
+                if args.restrict == 'all':
                     if add_this:
                         token['holder_candidate'].add(exptype)
-    if not overlappingcandidates:
+    if notoverlappingcandidates:
         _tagholdercandidates_sent_follow_daughters(sent, head_num)
 
 def _tagholdercandidates_sent_follow_daughters(sent, num):
@@ -709,53 +707,56 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
                 if expt in candidates:
                     featuresandlabeladded = False
                     for cand in candidates[expt]:
-                        featuresdict = {}
-                        if holder_set:
-                            featuresandlabeladded = True
+                        if args.restrict == 'sameexp' and cand in exp_pair[0]: #get_subtree(sent, cand, transitive=True)):
+                            pass
+                        else:
+                            featuresdict = {}
+                            if holder_set:
+                                featuresandlabeladded = True
 
-                            # labels
-                            if isinstance(exp_pair[1], OrderedDict):
-                                label = cand_in_ghodct(cand, exp_pair[1])
-                            if isinstance(exp_pair[1], set):
-                                label = cand in exp_pair[1]
-                            elif isinstance(exp_pair[1], str):
-                                label = cand == exp_pair[1]
-                            labels[expt].append(label)
+                                # labels
+                                if isinstance(exp_pair[1], OrderedDict):
+                                    label = cand_in_ghodct(cand, exp_pair[1])
+                                if isinstance(exp_pair[1], set):
+                                    label = cand in exp_pair[1]
+                                elif isinstance(exp_pair[1], str):
+                                    label = cand == exp_pair[1]
+                                labels[expt].append(label)
 
-                            # positions
-                            pos[expt].append({'sent': sent_i,
-                                                    'exp': exp_pair[0],
-                                                    'holder_sys': get_subtree(sent, cand, transitive=True),
-                                                    'holder_gold': exp_pair[1],
-                                                    'coref_gold': exp_pair[3]
-                                                    }) 
+                                # positions
+                                pos[expt].append({'sent': sent_i,
+                                                        'exp': exp_pair[0],
+                                                        'holder_sys': get_subtree(sent, cand, transitive=True),
+                                                        'holder_gold': exp_pair[1],
+                                                        'coref_gold': exp_pair[3]
+                                                        }) 
 
-                            # features
-                            ex_head = getex_head(exp_pair[0], sent)
-                            featuresdict['synt_path'] = syntactic_path(cand, ex_head,
-                                                                       sent, paths=paths)
-                            if semantic:
-                                tmp = shallow_sem_relation(cand-1, ex_head-1, sent)
+                                # features
+                                ex_head = getex_head(exp_pair[0], sent)
+                                featuresdict['synt_path'] = syntactic_path(cand, ex_head,
+                                                                           sent, paths=paths)
+                                if semantic:
+                                    tmp = shallow_sem_relation(cand-1, ex_head-1, sent)
+                                    if tmp:
+                                        featuresdict['shal_sem_rel'] = tmp
+                                featuresdict['ex_head_word'] = sent[ex_head-1]['form']
+                                featuresdict['ex_head_pos'] = sent[ex_head-1]['pos']
+                                featuresdict['ex_head_lemma'] = sent[ex_head-1]['lemma']
+                                featuresdict['cand_head_word'] = sent[cand-1]['form']
+                                featuresdict['cand_head_pos'] = sent[cand-1]['pos']
+                                tmp = dom_ex_type(sent, sent[ex_head-1]['head'], transitive=False)
                                 if tmp:
-                                    featuresdict['shal_sem_rel'] = tmp
-                            featuresdict['ex_head_word'] = sent[ex_head-1]['form']
-                            featuresdict['ex_head_pos'] = sent[ex_head-1]['pos']
-                            featuresdict['ex_head_lemma'] = sent[ex_head-1]['lemma']
-                            featuresdict['cand_head_word'] = sent[cand-1]['form']
-                            featuresdict['cand_head_pos'] = sent[cand-1]['pos']
-                            tmp = dom_ex_type(sent, sent[ex_head-1]['head'], transitive=False)
-                            if tmp:
-                                featuresdict['dom_ex_type'] = tmp
-                            featuresdict['ex_verb_voice'] = ex_verb_voice(sent, exp_pair[0])
-                            if cand > 1:
-                                featuresdict['context_r_word'] = sent[cand-2]['form']
-                                featuresdict['context_r_pos'] = sent[cand-2]['pos']
-                            if cand < len(sent):
-                                featuresdict['context_l_word'] = sent[cand]['form']
-                                featuresdict['context_l_pos'] = sent[cand]['pos']
-                            featuresdict['deprel_to_parent'] = sent[ex_head-1]['deprel']
-                                
-                            features[expt].append(featuresdict)
+                                    featuresdict['dom_ex_type'] = tmp
+                                featuresdict['ex_verb_voice'] = ex_verb_voice(sent, exp_pair[0])
+                                if cand > 1:
+                                    featuresdict['context_r_word'] = sent[cand-2]['form']
+                                    featuresdict['context_r_pos'] = sent[cand-2]['pos']
+                                if cand < len(sent):
+                                    featuresdict['context_l_word'] = sent[cand]['form']
+                                    featuresdict['context_l_pos'] = sent[cand]['pos']
+                                featuresdict['deprel_to_parent'] = sent[ex_head-1]['deprel']
+                                    
+                                features[expt].append(featuresdict)
                 else:
                     counters["expt_not_in_candidates"] += 1
                     counters["expt_not_in_candidates" + expt] += 1
@@ -1270,10 +1271,10 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         system_pairs.extend(system_pairs_exp)
     if predict:
         ssc = ev.spansetcoverage_o_p(system_pairs)
-        print "gold exp - all:\n", prf_prettystring(ssc)
+        print "system exp - all:\n", prf_prettystring(ssc)
     else:
         ssc = ev.spansetcoverage_o_p(system_pairs)
-        print "system exp - all: \n", prf_prettystring(ssc)
+        print "gold exp - all: \n", prf_prettystring(ssc)
     
     for k,v in sorted(counters.items(), key=lambda x: x[0]):
         print k, v
@@ -1407,6 +1408,39 @@ def featurestats(lst, feature='synt_path'):
                             examplecount += 1
                     featurecounter[sent[getex_head(pair[1], sent)-1]['pos']] += 1
                     featurecounters[pair[2]][sent[getex_head(pair[1], sent)-1]['pos']] += 1
+                if feature == 'deprel_to_parent':
+                    depreltoparent = sent[ex_head-1]['deprel']
+                    featurecounter[depreltoparent] += 1
+                    featurecounters[pair[2]][depreltoparent] += 1
+                    #othercounters['Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
+
+                # # features
+                # ex_head = getex_head(exp_pair[0], sent)
+                # featuresdict['synt_path'] = syntactic_path(cand, ex_head,
+                #                                            sent, paths=paths)
+                # if semantic:
+                #     tmp = shallow_sem_relation(cand-1, ex_head-1, sent)
+                #     if tmp:
+                #         featuresdict['shal_sem_rel'] = tmp
+                # featuresdict['ex_head_word'] = sent[ex_head-1]['form']
+                # featuresdict['ex_head_pos'] = sent[ex_head-1]['pos']
+                # featuresdict['ex_head_lemma'] = sent[ex_head-1]['lemma']
+                # featuresdict['cand_head_word'] = sent[cand-1]['form']
+                # featuresdict['cand_head_pos'] = sent[cand-1]['pos']
+                # tmp = dom_ex_type(sent, sent[ex_head-1]['head'], transitive=False)
+                # if tmp:
+                #     featuresdict['dom_ex_type'] = tmp
+                # featuresdict['ex_verb_voice'] = ex_verb_voice(sent, exp_pair[0])
+                # if cand > 1:
+                #     featuresdict['context_r_word'] = sent[cand-2]['form']
+                #     featuresdict['context_r_pos'] = sent[cand-2]['pos']
+                # if cand < len(sent):
+                #     featuresdict['context_l_word'] = sent[cand]['form']
+                #     featuresdict['context_l_pos'] = sent[cand]['pos']
+                # featuresdict['deprel_to_parent'] = sent[ex_head-1]['deprel']
+                                    
+
+
     if feature == 'synt_path':
         othercounters['Average length (only arrows)'] = (
                 othercounters['Length (only arrows)'] / othercounters['internal holders'])
@@ -1611,9 +1645,12 @@ if __name__ == "__main__":
     parser.add_argument("-lthsrl", dest="lthsrl", action='store_true')
     parser.add_argument("-argmaxcxe", help='a value below 0 will include system exp without overlap to a gold exp')
     parser.add_argument("-stats", "--stats")
-    parser.add_argument("-overlappingcandidates", dest="overlappingcandidates", action='store_true')
-    parser.add_argument("-restrict_all", action='store_true')
-    parser.add_argument("-allnpsashc", dest="allnpsashc", action='store_true')
+    parser.add_argument("-notoverlappingcandidates", dest="notoverlappingcandidates", action='store_true')
+    # todo - bedre navn
+    parser.add_argument("-restrict", default='sameexp', choices=['all', 'sameexp', 'sametype'])
+    #parser.add_argument("-notsameexp", help="todo", action='store_true')
+    #parser.add_argument("-restrict_same_exp", help="todo", action='store_true')
+    #parser.add_argument("-restrict_same_type", help="todo", action='store_true')
     parser.add_argument("-iob2", dest="iob2", help="Read output data from opinion expression detection", metavar="FILE")
     parser.add_argument("-savejson", dest="savejson", metavar="FILE")
     parser.add_argument("-savemodels", dest="savemodels", metavar="FILE")
@@ -1757,6 +1794,7 @@ if __name__ == "__main__":
         DEBUG = False
         DEBUGNOW = True
         print "Interactive"
+        print args
         #stats_srl = read_jsonfile(DATA_PREFIX + '/out/2016-06-21-dump.json.stats.json')
         # sp = {}
         # deplst = {}
