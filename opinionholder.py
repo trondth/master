@@ -99,7 +99,7 @@ def getexpressions_sent(sent, predict=False):
                         expr['dse'][gate['line_id']]['token_id'].add(i+1)
     return expr
 
-def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False): 
+def tagholdercandidates_sent(sent, predict=False): 
     """
     Tags holder candidates for the different types of expressions.
     Head of noun phrases are selected as holder candidates for an
@@ -109,11 +109,6 @@ def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False)
     @param sent List of tokens in sent
     @param duplicates Ignore holder candidates from subtree of a holder
     """
-    if args.notoverlappingcandidates:
-        notoverlappingcandidates = True
-    if args.restrict == 'sameexp':
-        # Restrict holder candidates when building features instead
-        allnpsashc = True
     head_num = False
     for i, token in enumerate(sent):
         if 'daughters' not in token:
@@ -130,7 +125,10 @@ def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False)
                     if args.restrict == 'all':
                         add_this = True
                     for exptype in EXPTYPES:
-                        if not allnpsashc: 
+                        if args.restrict == 'sameexp': 
+                            # Restrict holder candidates when building features instead
+                            token['holder_candidate'].add(exptype)
+                        else:
                             if predict:
                                 tmpexp = 'P' + exptype
                             else:
@@ -144,8 +142,6 @@ def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False)
                             except:
                                 print sent
                                 raise
-                        else:
-                            token['holder_candidate'].add(exptype)
                     if args.restrict == 'all' and add_this:
                         for exptype in EXPTYPES:
                             token['holder_candidate'].add(exptype)
@@ -155,7 +151,9 @@ def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False)
                     add_this = True
                 for exptype in EXPTYPES:
                     #if i+1 not in rsets[exptype]:
-                    if not allnpsashc:
+                    if args.restrict == 'sameexp':
+                        token['holder_candidate'].add(exptype)
+                    else:
                         if predict:
                             tmpexp = 'P' + exptype
                         else:
@@ -165,12 +163,10 @@ def tagholdercandidates_sent(sent, notoverlappingcandidates=True, predict=False)
                                 token['holder_candidate'].add(exptype)
                         else:
                             add_this = False
-                    else:
-                        token['holder_candidate'].add(exptype)
                 if args.restrict == 'all':
                     if add_this:
                         token['holder_candidate'].add(exptype)
-    if notoverlappingcandidates:
+    if args.notoverlappingcandidates:
         _tagholdercandidates_sent_follow_daughters(sent, head_num)
 
 def _tagholdercandidates_sent_follow_daughters(sent, num):
@@ -1375,12 +1371,21 @@ def jointestandresult(tlst, rlst):
         newlst.append(newsent)
     return newlst
 
-def featurestats(lst, feature='synt_path'):
+def featurestats(lst, features='all'):
+
+    if features == 'all':
+        features = {'synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
+                'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent'}
+    if isinstance(features, basestring):
+        features = {features}
     examplecount = 0
-    featurecounter = Counter()
-    featurecounters = {}
+    featurecounter = {}
     for exp in EXPTYPES:
-        featurecounters[exp] = Counter()
+        featurecounters[exp] = {}
+    for it in features:
+        featurecounter[it] = Counter()
+        for exp in EXPTYPES:
+            featurecounters[exp][it] = Counter()
     othercounters = Counter()
     for i, sent in enumerate(lst):
         ex = getexpressions_sent(sent)
@@ -1394,58 +1399,70 @@ def featurestats(lst, feature='synt_path'):
             elif isinstance(pair[1], OrderedDict):
                 othercounters['OrderedDict'] += 1
             elif isinstance(pair[1], set):
+                ex_head = getex_head(pair[0], sent)
+                cand = getex_head(pair[1], sent)
                 othercounters['internal holders'] += 1
-                if feature == 'synt_path':
-                    syntpath = syntactic_path(getex_head(pair[1], sent), getex_head(pair[0], sent),
-                                                      sent)
-                    featurecounter[syntpath] += 1
-                    featurecounters[pair[2]][syntpath] += 1
-                    othercounters['Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
-                if feature == 'cand_head_pos':
-                    if DEBUG and examplecount < 5:
-                        if sent[getex_head(pair[1], sent)-1]['pos'] == 'JJ':
-                            print '\n\n'
-                            print sent
-                            print '\n\n'
-                            examplecount += 1
-                    featurecounter[sent[getex_head(pair[1], sent)-1]['pos']] += 1
-                    featurecounters[pair[2]][sent[getex_head(pair[1], sent)-1]['pos']] += 1
-                if feature == 'deprel_to_parent':
+                othercounters['internal holders' + pair[2]] += 1
+
+                # 'synt_path'
+                syntpath = syntactic_path(getex_head(pair[1], sent), ex_head, sent)
+                featurecounter['synt_path'][syntpath] += 1
+                featurecounters[pair[2]]['synt_path'][syntpath] += 1
+                othercounters['synt_path Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
+                othercounters['synt_path Length (only arrows)' + pair[2]] += syntpath.count(u'↑') + syntpath.count(u'↓')
+                
+                # 'ex_head_word'
+                # 'ex_head_lemma'
+                # 'ex_head_pos'
+                featurecounter['ex_head_word'][sent[ex_head-1]['form']] += 1
+                featurecounter['ex_head_pos'][sent[ex_head-1]['pos']] += 1
+                featurecounter['ex_head_lemma'][sent[ex_head-1]['lemma']] += 1
+
+                # 'cand_head_pos'
+                ## if DEBUG and examplecount < 5:
+                ##     if sent[getex_head(pair[1], sent)-1]['pos'] == 'JJ':
+                ##         print '\n\n'
+                ##         print sent
+                ##         print '\n\n'
+                ##         examplecount += 1
+                ## featurecounter['cand_head_pos'][sent[getex_head(pair[1], sent)-1]['pos']] += 1
+                ## featurecounters['cand_head_pos'][pair[2]][sent[getex_head(pair[1], sent)-1]['pos']] += 1
+                
+                # 'cand_head_word'
+                featurecounter['cand_head_word'][sent[cand-1]['form']] += 1
+                featurecounter['cand_head_pos'][sent[cand-1]['pos']] += 1
+                
+                # 'dom_ex_type'
+                tmp = dom_ex_type(sent, sent[ex_head-1]['head'], transitive=False)
+                if tmp:
+                    featurecounter['dom_ex_type'][tmp] += 1
+
+                # 'ex_verb_voice'
+                featurecounter['ex_verb_voice'][ex_verb_voice(sent, exp_pair[0])] += 1
+
+                # 'context_r_pos'
+                # 'context_r_word'
+                # 'context_l_pos'
+                # 'context_l_word'
+                if cand > 1:
+                    featurecounter['context_r_word'][sent[cand-2]['form']] += 1
+                    featurecounter['context_r_pos'][sent[cand-2]['pos']] += 1
+                if cand < len(sent):
+                    featurecounter['context_l_word'][sent[cand]['form']] += 1
+                    featurecounter['context_l_pos'][sent[cand]['pos']] += 1
+
+                # 'deprel_to_parent'
+                if 'deprel_to_parent' in features:
                     depreltoparent = sent[ex_head-1]['deprel']
-                    featurecounter[depreltoparent] += 1
-                    featurecounters[pair[2]][depreltoparent] += 1
-                    #othercounters['Length (only arrows)'] += syntpath.count(u'↑') + syntpath.count(u'↓')
-
-                # # features
-                # ex_head = getex_head(exp_pair[0], sent)
-                # featuresdict['synt_path'] = syntactic_path(cand, ex_head,
-                #                                            sent, paths=paths)
-                # if semantic:
-                #     tmp = shallow_sem_relation(cand-1, ex_head-1, sent)
-                #     if tmp:
-                #         featuresdict['shal_sem_rel'] = tmp
-                # featuresdict['ex_head_word'] = sent[ex_head-1]['form']
-                # featuresdict['ex_head_pos'] = sent[ex_head-1]['pos']
-                # featuresdict['ex_head_lemma'] = sent[ex_head-1]['lemma']
-                # featuresdict['cand_head_word'] = sent[cand-1]['form']
-                # featuresdict['cand_head_pos'] = sent[cand-1]['pos']
-                # tmp = dom_ex_type(sent, sent[ex_head-1]['head'], transitive=False)
-                # if tmp:
-                #     featuresdict['dom_ex_type'] = tmp
-                # featuresdict['ex_verb_voice'] = ex_verb_voice(sent, exp_pair[0])
-                # if cand > 1:
-                #     featuresdict['context_r_word'] = sent[cand-2]['form']
-                #     featuresdict['context_r_pos'] = sent[cand-2]['pos']
-                # if cand < len(sent):
-                #     featuresdict['context_l_word'] = sent[cand]['form']
-                #     featuresdict['context_l_pos'] = sent[cand]['pos']
-                # featuresdict['deprel_to_parent'] = sent[ex_head-1]['deprel']
+                    featurecounter['deprel_to_parent'][depreltoparent] += 1
+                    featurecounters['deprel_to_parent'][pair[2]][depreltoparent] += 1
                                     
-
-
-    if feature == 'synt_path':
-        othercounters['Average length (only arrows)'] = (
-                othercounters['Length (only arrows)'] / othercounters['internal holders'])
+    if feature == 'synt_path' or 'synt_path' in feature:
+        othercounters['synt_path']['Average length (only arrows)'] = (
+                othercounters['synt_path']['Length (only arrows)'] / othercounters['internal holders'])
+        for exp in EXPTYPES:
+            othercounters['synt_path']['Average length (only arrows) for', exp] = (
+                    othercounters['synt_path']['Length (only arrows)' + exp]) / othercounters['internal holders' + exp] 
     return featurecounter, featurecounters, othercounters
 
 if __name__ == "__main__":
@@ -1496,32 +1513,55 @@ if __name__ == "__main__":
     parser.add_argument("-savemodels", dest="savemodels", metavar="FILE")
     parser.add_argument("-loadmodels", dest="loadmodels", metavar="FILE")
     parser.add_argument("-loadjsonlist", metavar="FILE")
-    parser.add_argument("-featurestats")
+    parser.add_argument("-featurestats", choices=[
+        'all', 'synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
+                'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent'
+        ])
     args = parser.parse_args()
+
+    print "= ARGS =\n", args
 
     if args.loadjsonlist:
         print "= LOAD JSON ="
         lst = read_jsonfile(args.loadjsonlist)
 
     if args.featurestats:
+
+        if args.featurestats == 'all':
+            features = ['synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
+                'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent']
+        else:
+            features = {args.featurestats}
         
         for dep in DEPREPS:
             print "\n= DEPREP: {} =".format(dep)
             fs, fss, os = featurestats(lst['train'][dep] + lst['test'][dep], feature=args.featurestats)
-            for it in fs.most_common(20):
-                print it[0], it[1]
-            print "= Number of different features ="
-            print len(fs)
-            print "\n= For specific exptypes = "
-            for exp in EXPTYPES:
-                print "\n= {} =".format(exp)
-                for it in fss[exp].most_common(10):
+            if 'synt_path' in features:
+                features.remove('synt_path')
+                print "\n= synt path ="
+                for it in fs['synt_path'].most_common(12):
                     print it[0], it[1]
                 print "= Number of different features ="
-                print len(fss[exp])
-            print "= Other counts ="
-            for k, v in os.items():
-                print k, v
+                print len(fs['synt_path'])
+                print "\n= For specific exptypes = "
+                for exp in EXPTYPES:
+                    print "\n= {} =".format(exp)
+                    for it in fss[exp]['synt_path'].most_common(5):
+                        print it[0], it[1]
+                    print "= Number of different features ="
+                    print len(fss[exp]['synt_path'])
+                print "= Other counts ="
+                for k, v in os.items():
+                    print k, v
+
+            print "\n= Other features ="
+            for f in features:
+                print "\n= {} =".format(f)
+                print "Number of different features: ", len(fs[f])
+                print "Most common feature: ", fs[f].most_common(1)
+                for exp in EXPTYPES:
+                    print "Number of different features: ", len(fss[exp][f])
+                    print "Most common feature: ", fss[exp][f].most_common(1)
 
         
     if args.train or (args.eval and not (args.jtrain or args.loadmodels) ):
