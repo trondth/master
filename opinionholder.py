@@ -1380,6 +1380,7 @@ def featurestats(lst, features='all'):
         features = {features}
     examplecount = 0
     featurecounter = {}
+    featurecounters = {}
     for exp in EXPTYPES:
         featurecounters[exp] = {}
     for it in features:
@@ -1438,7 +1439,7 @@ def featurestats(lst, features='all'):
                     featurecounter['dom_ex_type'][tmp] += 1
 
                 # 'ex_verb_voice'
-                featurecounter['ex_verb_voice'][ex_verb_voice(sent, exp_pair[0])] += 1
+                featurecounter['ex_verb_voice'][ex_verb_voice(sent, pair[0])] += 1
 
                 # 'context_r_pos'
                 # 'context_r_word'
@@ -1455,14 +1456,14 @@ def featurestats(lst, features='all'):
                 if 'deprel_to_parent' in features:
                     depreltoparent = sent[ex_head-1]['deprel']
                     featurecounter['deprel_to_parent'][depreltoparent] += 1
-                    featurecounters['deprel_to_parent'][pair[2]][depreltoparent] += 1
+                    featurecounters[pair[2]]['deprel_to_parent'][depreltoparent] += 1
                                     
-    if feature == 'synt_path' or 'synt_path' in feature:
-        othercounters['synt_path']['Average length (only arrows)'] = (
-                othercounters['synt_path']['Length (only arrows)'] / othercounters['internal holders'])
+    if 'synt_path' in features:
+        othercounters['synt_path ' + 'Average length (only arrows)'] = (
+                othercounters['synt_path ' + 'Length (only arrows)'] / othercounters['internal holders'])
         for exp in EXPTYPES:
-            othercounters['synt_path']['Average length (only arrows) for', exp] = (
-                    othercounters['synt_path']['Length (only arrows)' + exp]) / othercounters['internal holders' + exp] 
+            othercounters['synt_path ' + 'Average length (only arrows) for', exp] = (
+                    othercounters['synt_path ' + 'Length (only arrows)' + exp]) / othercounters['internal holders' + exp] 
     return featurecounter, featurecounters, othercounters
 
 if __name__ == "__main__":
@@ -1526,28 +1527,27 @@ if __name__ == "__main__":
         lst = read_jsonfile(args.loadjsonlist)
 
     if args.featurestats:
-
-        if args.featurestats == 'all':
-            features = ['synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
-                'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent']
-        else:
-            features = {args.featurestats}
         
         for dep in DEPREPS:
+            if args.featurestats == 'all':
+                features = ['synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
+                    'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent']
+            else:
+                features = {args.featurestats}
             print "\n= DEPREP: {} =".format(dep)
-            fs, fss, os = featurestats(lst['train'][dep] + lst['test'][dep], feature=args.featurestats)
+            fs, fss, os = featurestats(lst['train'][dep] + lst['test'][dep], features=args.featurestats)
             if 'synt_path' in features:
                 features.remove('synt_path')
                 print "\n= synt path ="
                 for it in fs['synt_path'].most_common(12):
-                    print it[0], it[1]
+                    print u"{} {}".format(it[0], it[1]).encode('utf-8')
                 print "= Number of different features ="
                 print len(fs['synt_path'])
                 print "\n= For specific exptypes = "
                 for exp in EXPTYPES:
                     print "\n= {} =".format(exp)
                     for it in fss[exp]['synt_path'].most_common(5):
-                        print it[0], it[1]
+                        print u"{} {}".format(it[0], it[1]).encode('utf-8')
                     print "= Number of different features ="
                     print len(fss[exp]['synt_path'])
                 print "= Other counts ="
@@ -1558,10 +1558,10 @@ if __name__ == "__main__":
             for f in features:
                 print "\n= {} =".format(f)
                 print "Number of different features: ", len(fs[f])
-                print "Most common feature: ", fs[f].most_common(1)
+                print u"Most common feature: {}".format(fs[f].most_common(1)).encode('utf-8')
                 for exp in EXPTYPES:
                     print "Number of different features: ", len(fss[exp][f])
-                    print "Most common feature: ", fss[exp][f].most_common(1)
+                    print "Most common feature: {}".format(fss[exp][f].most_common(1)).encode('utf-8')
 
         
     if args.train or (args.eval and not (args.jtrain or args.loadmodels) ):
