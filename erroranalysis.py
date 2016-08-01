@@ -168,20 +168,21 @@ def _erroranalysis_all(sc, threshold=0):
 if __name__ == "__main__":
     print "= Erroranalysis ="
     #stats_srl = read_jsonfile(DATA_PREFIX + '/out/2016-06-21-dump.json.stats.json')
-    # sp = {}
-    # deplst = {}
-    # sp['dt'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-dt.json')
-    # sp['sb'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-sb.json')
-    # sp['conll'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll.json')
+    sp = {}
+    deplst = {}
+    spfolder = '/out/dev/gold_exp_allnps-json'
+    sp['dt'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
+    sp['sb'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
+    sp['conll'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
     # # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
-    # deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
-    # deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
-    # deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
+    deplst['dt'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.dt')
+    deplst['sb'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.sb')
+    deplst['conll'] = readconll2009(DATA_PREFIX + '/out/devtest.conll.conll')
     # # # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
     # # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
-    # gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='dt', feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+    gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=True, feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
-    #erroranalysis_print_dct(gdct)
+    erroranalysis_print_dct(gdct)
     #erroranalysis_print_dct(sdct)
     #print erroranalysis_print_table(freqtable, freqtable_labels)
     #print erroranalysis_print_tagged_sentences(freqtable, deplst['sb'], sp['sb'])

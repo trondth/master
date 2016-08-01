@@ -196,7 +196,7 @@ def getholder_exp_pairs_sent(sent, expr, holders, exptype=False, isolate_exp=Tru
     @param sent List of tokens
     @param expr Dict with lists of expressions of the different types
     @param holders List of opinion holders in the sentence
-    @return list of tuples (exp, holder, exptype)
+    @return list of tuples (exp, holder, exptype, coref(or false, when there are no internal holders))
     """
     tuples = []
     if not exptype:
@@ -492,7 +492,7 @@ def ex_verb_voice(sent, ex_set, be_outside_ex=True):
     _slice = []
     for num in ex_set:
         _slice.append(num-1)
-        if sent[num-1]['pos'] == 'VBG':
+        if sent[num-1]['pos'] == 'VBN':
             criteria_1 = True
             if sent[int(sent[num-1]['head'])-1]['lemma'] == 'be':
                 criteria_3 = True
@@ -1774,23 +1774,23 @@ if __name__ == "__main__":
 
         #sent = a[5364]
         #SRI
-        #test = "database.mpqa.2.0/docs/20020510/21.50.13-28912" # SRI
-        # a = getopinionholder(test)
+        test = "database.mpqa.2.0/docs/20020510/21.50.13-28912" # SRI
+        a = getopinionholder(test)
         # ###b = writeconll(a, DATA_PREFIX + "/out/tmp2.conll")
         # ### lth = lth_srl.Lth_srl()
         # ###conlloutput = lth.run(DATA_PREFIX + "/out/tmp2.conll")
-        # conlloutput = DATA_PREFIX + '/out/tmp2.conll.out'
-        # c = readconlltolst(a, conlloutput)
-        # sent = c[3]
+        conlloutput = DATA_PREFIX + '/out/tmp2.conll.out'
+        c = readconlltolst(a, conlloutput)
+        sent = c[3]
         # ####foo = getfeaturesandlabels([a[5364]])
-        # daughterlists_sent(sent)
-        # ex = getexpressions_sent(sent)
+        daughterlists_sent(sent)
+        ex = getexpressions_sent(sent)
         # tagholdercandidates_sent(sent, transitive=True) #False)
         # candidates = getholdercandidates_list_sent(sent)
         # ####print candidates
-        # holder_dct = getholders_sent_new(sent)
+        holder_dct = getholders_sent_new(sent)
         # ####try:
-        # holder_exp_pairs = getholder_exp_pairs_sent(sent, ex, holder_dct)
+        holder_exp_pairs = getholder_exp_pairs_sent(sent, ex, holder_dct)
 
         #print_tikzdep(sent)
 
