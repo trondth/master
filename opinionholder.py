@@ -513,17 +513,20 @@ def extolst(dict, gatekey='GATE'):
             return_lst.append({'token_id': t['token_id'], 'expt': gatestr2label(t[gatekey]['ann_type'])})
     return return_lst
 
-def count_sys(lst):
+def count_sys(lst, save=False):
+    return_lst = []
     exp_seen = set()
     exp_seen_set = set()
     for item in lst:
         if str(item[0]) not in exp_seen:
             exp_seen.add(str(item[0]))
+            return_lst.append(item)
             #if args.onlyinternals:
             #    if not isinstance(item[1], basestring):
             #        counters['sys_len_new' + item[2]] += 1
             #else:
             counters['sys_len_new' + item[2]] += 1
+    return return_lst
 
 def count_gold(lst):
     exp_seen = set()
@@ -616,7 +619,7 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
             holder_exp_pairs_use = holder_exp_pairs_sys
         else:
             holder_exp_pairs_use = holder_exp_pairs
-        count_sys(holder_exp_pairs_use)
+        holder_exp_pairs_use = count_sys(holder_exp_pairs_use, save=True)
         for exp_pair in holder_exp_pairs_use:
             expt = exp_pair[2]
             cand_exists = True
@@ -972,14 +975,23 @@ class evaluate:
 
     def get_unique_exp(self, s_p_g, exptype, count=True):
         unique_exp_s_p = []
-        cur = False
+        # cur = False
+        # for item in s_p_g:
+        #     if cur and (cur['sent'] == item['sent'] and
+        #         cur['exp'] == item['exp']):
+        #         pass
+        #     else:
+        #         unique_exp_s_p.append(item)
+        #     cur = item
+
+        exp_seen = set()
+        exp_seen_set = set()
         for item in s_p_g:
-            if cur and (cur['sent'] == item['sent'] and
-                cur['exp'] == item['exp']):
-                pass
-            else:
+            if str(item['exp']) + str(item['sent']) not in exp_seen:
+                exp_seen.add(str(item['exp']) + str(item['sent']))
+                counters['gold_len_new_getunique' + exptype] += 1
                 unique_exp_s_p.append(item)
-            cur = item
+
         #if args.onlyinternals:
         #    for item in unique_exp_s_p:
         #        if item['holder_gold'] == 'w':
@@ -997,6 +1009,7 @@ class evaluate:
         @param s_p_gold list of gold exp-holder pairs
         @return List of system pairs for unique expressions with highest confidence score
         """
+        counters['s_p_int'] = len(s_p_int)
         if not s_p_imp and not s_p_w:
             return s_p_int
         s_p = []
@@ -1039,6 +1052,8 @@ class evaluate:
         For the gold expr, we can ignore the 
         """
         system_pairs = []
+
+        counters['getsp gold lst'] = len(gold_lst)
         
         if isinstance(results, np.ndarray):
             cur = None
@@ -1217,6 +1232,9 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
     ftest, ltest, stest = getfeaturesandlabels(testset, semantic=semantic, predict=predict)
     print counters
     for exp in exptypes:
+        gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
+        #counters[pr_g1] = len(gold_p1)
+        print counters
         vec, X, y = create_matrix(features[exp], labels[exp])
         if externals:
             vecw, Xw, yw = create_matrix(features[exp + 'w'], labels[exp + 'w'])
@@ -1242,21 +1260,26 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         s_p_imp = False
         gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
         counters['gold_p1'] = len(gold_p1)
+        counters['gold_pos_w'] = len(stest['positions'][exp + 'w'])
+        print counters
         gold_p2 = copy.deepcopy(gold_p1)
         gold_p3 = copy.deepcopy(gold_p1)
         if clfw:
             resultsw = clfw.predict_proba(Xtw)
             s_p_w=ev.get_system_pairs_prob(stest['positions'][exp + 'w'], resultsw, gold_p1)
+            counters['s_p_w' + exp] = len(s_p_w)
             if DEBUG:
                 print "RESULTSW"
                 print resultsw
         if clfimp:
             resultsimp = clfimp.predict_proba(Xtimp)
             s_p_imp=ev.get_system_pairs_prob(stest['positions'][exp + 'implicit'], resultsimp, gold_p2)
+            counters['s_p_imp' + exp] = len(s_p_imp)
             if DEBUG:
                 print "RESULTSIMP"
                 print resultsimp
         s_p_int=ev.get_system_pairs_prob(stest['positions'][exp], results, gold_p3)
+        counters['s_p_int' + exp] = len(s_p_int)
         system_pairs_exp = ev.merge_system_pairs(s_p_int, s_p_imp=s_p_imp, s_p_w=s_p_w)
         counters['system_pairs_all' + exp] = len(system_pairs_exp)
         for pair in system_pairs_exp:
