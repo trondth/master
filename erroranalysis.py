@@ -43,9 +43,6 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
     #print freqtable
     #print deprlst
     if deprlst == DEPREPS:
-        print len(sp['dt'])
-        print len(sp['sb'])
-        print len(sp['conll'])
         for pair['dt'], pair['sb'], pair['conll'] in itertools.izip(sp['dt'], sp['sb'], sp['conll']):
             if (pair['dt']['exp'] != pair['sb']['exp'] or
                     pair['conll']['exp'] != pair['sb']['exp'] or
@@ -78,6 +75,7 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
         if DEBUG and pair['conll']['sent'] == 528:
             print sc, alld
     if alld:
+        _erroranalysis_pair_stats(sc)
         error_pair = _erroranalysis_all(sc)
         if error_pair:
             counters['error_pairs'] += 1
@@ -90,14 +88,14 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
 
         # w/imp must be checked in another way
         wimp_pair = False
+        wimp_syspair = set()
         for i, depr in enumerate(deprlst):
             if (isinstance(pair[depr]['holder_gold'], basestring)):
-                if i == 0:
-                    counters['holder_gold - w/imp - ' + depr] += 1
+                counters['holder_gold - w/imp - ' + depr] += 1
                 wimp_pair = True
             elif (isinstance(pair[depr]['holder_sys'], basestring)):
                 counters['holder_sys - w/imp - ' + depr] += 1
-                wimp_pair = True
+                wimp_syspair.add(depr)
 
         if not wimp_pair:
             freqtable[-1].append(pair[best]['sent'])
@@ -105,11 +103,17 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
                 sent = lst[depr][pair[depr]['sent']]
                 ex_id = getex_head(pair[depr]['exp'], sent)
                 g_id = getex_head(pair[depr]['holder_gold'], sent)
-                s_id = getex_head(pair[depr]['holder_sys'], sent)
+                if depr not in wimp_syspair:
+                    s_id = getex_head(pair[depr]['holder_sys'], sent)
+                else:
+                    s_id = False
                 if feature == 'holder_head_pos':
                     g_head_pos_str = sent[g_id-1]['pos']
                     gold_dct[depr][g_head_pos_str] = gold_dct[depr].get(g_head_pos_str, 0) + 1
-                    s_head_pos_str = sent[s_id-1]['pos']
+                    if s_id:
+                        s_head_pos_str = sent[s_id-1]['pos']
+                    else:
+                        s_head_pos_str = "n/a (w/imp)"
                     sys_dct[depr][s_head_pos_str] = gold_dct[depr].get(s_head_pos_str, 0) + 1
                     freqtable[i*2].append(g_head_pos_str)
                     freqtable[i*2+1].append(s_head_pos_str)
@@ -129,7 +133,10 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
                     freqtable[i].append(deprel_to_parent_str)
                 if feature == 'synt_path':
                     daughterlists_sent(sent)
-                    s_synt_path = syntactic_path(s_id, ex_id, sent)
+                    if s_id:
+                        s_synt_path = syntactic_path(s_id, ex_id, sent)
+                    else:
+                        s_synt_path = "n/a (w/imp)"
                     g_synt_path = syntactic_path(g_id, ex_id, sent)
                     freqtable[i*2].append(g_synt_path)
                     freqtable[i*2+1].append(s_synt_path)
@@ -201,6 +208,15 @@ def _erroranalysis_better(sc, best, notbest):
 
 #tmpcnt = Counter()
 
+def _erroranalysis_pair_stats(sc, threshold=0):
+    correct = "pairs without error in - "
+    for dep, v in sorted(sc.items()):
+        if v > threshold:
+            correct += str(dep) + '/'
+    if correct == "pairs without error in - ":
+        correct += "None"
+    counters[correct] += 1
+
 def _erroranalysis_all(sc, threshold=0):
     for i, v in enumerate(sc.values()):
         if v > threshold:
@@ -209,7 +225,7 @@ def _erroranalysis_all(sc, threshold=0):
 
 def print_counters():
     print "= Counters ="
-    for k,v in counters.items():
+    for k,v in sorted(counters.items(), key=lambda x: x[0]):
         print k, v
             
 if __name__ == "__main__":
@@ -220,6 +236,7 @@ if __name__ == "__main__":
     deplst = {}
     spfolder = '/out/dev/gold-restrict-sametype-json'
     sp['dt'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
+    print len(sp['dt'])
     sp['sb'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
     sp['conll'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
     # # #sp['srl'] = read_jsonfile(DATA_PREFIX + '/out/dev/gold_exp/system_pairs-conll-lthsrl-wo-semantic.json')
