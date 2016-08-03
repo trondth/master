@@ -724,7 +724,8 @@ def getfeaturesandlabels(lst, exptype=False, semantic=True, predict=True):
                                                         'exp': exp_pair[0],
                                                         'holder_sys': get_subtree(sent, cand, transitive=True),
                                                         'holder_gold': exp_pair[1],
-                                                        'coref_gold': exp_pair[3]
+                                                        'coref_gold': exp_pair[3],
+                                                        'exptype' : expt
                                                         }) 
 
                                 # features
