@@ -987,8 +987,8 @@ class evaluate:
         exp_seen = set()
         exp_seen_set = set()
         for item in s_p_g:
-            if str(item['exp']) + str(item['sent']) not in exp_seen:
-                exp_seen.add(str(item['exp']) + str(item['sent']))
+            if (i + str(item['exp']) + 's' + str(item['sent'])) not in exp_seen:
+                exp_seen.add('i' + str(item['exp']) + 's' + str(item['sent']))
                 counters['gold_len_new_getunique' + exptype] += 1
                 unique_exp_s_p.append(item)
 
@@ -1232,9 +1232,6 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
     ftest, ltest, stest = getfeaturesandlabels(testset, semantic=semantic, predict=predict)
     print counters
     for exp in exptypes:
-        gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
-        #counters[pr_g1] = len(gold_p1)
-        print counters
         vec, X, y = create_matrix(features[exp], labels[exp])
         if externals:
             vecw, Xw, yw = create_matrix(features[exp + 'w'], labels[exp + 'w'])
@@ -1259,9 +1256,6 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         s_p_w = False
         s_p_imp = False
         gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
-        counters['gold_p1'] = len(gold_p1)
-        counters['gold_pos_w'] = len(stest['positions'][exp + 'w'])
-        print counters
         gold_p2 = copy.deepcopy(gold_p1)
         gold_p3 = copy.deepcopy(gold_p1)
         if clfw:
