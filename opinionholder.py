@@ -1374,9 +1374,10 @@ def jointestandresult(tlst, rlst):
 
 def featurestats(lst, features='all'):
 
-    if features == 'all':
-        features = {'synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
+    allfeatures = {'synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
                 'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent'}
+    if features == 'all':
+        features = allfeatures
     if isinstance(features, basestring):
         features = {features}
     examplecount = 0
@@ -1384,7 +1385,7 @@ def featurestats(lst, features='all'):
     featurecounters = {}
     for exp in EXPTYPES:
         featurecounters[exp] = {}
-    for it in features:
+    for it in allfeatures:
         featurecounter[it] = Counter()
         for exp in EXPTYPES:
             featurecounters[exp][it] = Counter()
@@ -1459,7 +1460,7 @@ def featurestats(lst, features='all'):
                     featurecounter['deprel_to_parent'][depreltoparent] += 1
                     featurecounters[pair[2]]['deprel_to_parent'][depreltoparent] += 1
                                     
-    if 'synt_path' in features:
+    if 'synt_path' in args.featurestats:
         othercounters['synt_path ' + 'Average length (only arrows)'] = (
                 othercounters['synt_path ' + 'Length (only arrows)'] / othercounters['internal holders'])
         for exp in EXPTYPES:
@@ -1563,6 +1564,9 @@ if __name__ == "__main__":
                 for exp in EXPTYPES:
                     print "Number of different features: ", len(fss[exp][f])
                     print "Most common feature: {}".format(fss[exp][f].most_common(1)).encode('utf-8')
+                if f == 'dom_ex_type':
+                    for it in fs['dom_ex_type'].most_common():
+                        print u"{} {}".format(it[0], it[1]).encode('utf-8')
 
         
     if args.train or (args.eval and not (args.jtrain or args.loadmodels) ):
