@@ -1241,6 +1241,7 @@ def print_eval(trainset, testset, exptypes=EXPTYPES, semantic=False, savemodels=
         s_p_w = False
         s_p_imp = False
         gold_p1 = ev.get_unique_exp(copy.deepcopy(stest['positions'][exp + 'w']), exp, count=False)
+        counters['gold_p1'] = len(gold_p1)
         gold_p2 = copy.deepcopy(gold_p1)
         gold_p3 = copy.deepcopy(gold_p1)
         if clfw:

@@ -50,9 +50,9 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
             if (pair['dt']['exp'] != pair['sb']['exp'] or
                     pair['conll']['exp'] != pair['sb']['exp'] or
                     pair['conll']['exp'] != pair['dt']['exp']):
-                counters['feil'] += 1
+                counters['errors'] += 1
             else:
-                counters['riktig'] += 1
+                counters['total number of pairs'] += 1
             if DEBUG and pair['conll']['sent'] == 59:
                 print "PAIR", pair
                 for i, t in enumerate(lst['sb'][59]):
@@ -66,7 +66,6 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
                     pair['srl']['exp'] == pair['conll']['exp'] and
                     pair['srl']['sent'] == pair['conll']['sent']):
                     _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld)
-    print counters
     return _erroranalysis_sort_dct(gold_dct, deprlst=deprlst), _erroranalysis_sort_dct(sys_dct, deprlst=deprlst), freqtable, freqtable_labels
 
 def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=None, alld=False):
@@ -91,11 +90,12 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
 
         # w/imp must be checked in another way
         wimp_pair = False
-        for depr in deprlst:
+        for i, depr in enumerate(deprlst):
             if (isinstance(pair[depr]['holder_gold'], basestring)):
-                counters['holder_gold - w/imp - ' + depr] += 1
+                if i == 0:
+                    counters['holder_gold - w/imp - ' + depr] += 1
                 wimp_pair = True
-            if (isinstance(pair[depr]['holder_sys'], basestring)):
+            elif (isinstance(pair[depr]['holder_sys'], basestring)):
                 counters['holder_sys - w/imp - ' + depr] += 1
                 wimp_pair = True
 
@@ -166,6 +166,8 @@ def erroranalysis_print_table(freqtable, freqtable_labels):
 def erroranalysis_print_tagged_sentences(freqtable, deplst, sp):
     """
     In google docs, regex replace G(\w*)G to {$1}
+
+    @param freqtable Bla bla
     """
     count = 0
     for p in sp:
@@ -203,8 +205,12 @@ def _erroranalysis_all(sc, threshold=0):
     for i, v in enumerate(sc.values()):
         if v > threshold:
             return False
-    counters['error_pair_3'] += 1
     return True
+
+def print_counters():
+    print "= Counters ="
+    for k,v in counters.items():
+        print k, v
             
 if __name__ == "__main__":
     counters.clear()
@@ -227,11 +233,17 @@ if __name__ == "__main__":
 
     gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=True, feature='deprel_to_parent')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
+    print_counters()
+
     #erroranalysis_print_dct(gdct)
     #erroranalysis_print_dct(sdct)
-    print erroranalysis_print_table(freqtable, freqtable_labels)
+    #print erroranalysis_print_table(freqtable, freqtable_labels)
     #print erroranalysis_print_tagged_sentences(freqtable, deplst['sb'], sp['sb'])
     #print erroranalysis_print_tagged_sentences(freqtable, deplst['sb'], sp['sb'])
     #print argmaxcxh(holder_dct['peep'], candidates['dse'])
     #print cand_in_ghodct(list(candidates['dse'])[1], holder_dct['peep'])
+    
+
+            
+                
     
