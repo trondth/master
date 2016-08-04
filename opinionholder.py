@@ -987,7 +987,7 @@ class evaluate:
         exp_seen = set()
         exp_seen_set = set()
         for item in s_p_g:
-            if (i + str(item['exp']) + 's' + str(item['sent'])) not in exp_seen:
+            if ('i' + str(item['exp']) + 's' + str(item['sent'])) not in exp_seen:
                 exp_seen.add('i' + str(item['exp']) + 's' + str(item['sent']))
                 counters['gold_len_new_getunique' + exptype] += 1
                 unique_exp_s_p.append(item)
