@@ -5,7 +5,7 @@ from opinionholder import *
 
 DEBUG = False
 
-def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld=False):
+def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld=False, threshold=0):
     """
     @param lst list of sentences with list of tokens
     @param sp list of system pairs (output from eval)
@@ -54,7 +54,7 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
                 print "PAIR", pair
                 for i, t in enumerate(lst['sb'][59]):
                     print i+1, t['head'], t['form'], t['pos']
-            _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld)
+            _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld, threshold=threshold)
     elif deprlst == ['conll', 'srl']:
         for pair['srl'] in sp['srl']:
             # unødv. kompleks
@@ -62,20 +62,24 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
                 if (pair['srl']['holder_gold'] == pair['conll']['holder_gold'] and 
                     pair['srl']['exp'] == pair['conll']['exp'] and
                     pair['srl']['sent'] == pair['conll']['sent']):
-                    _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld)
+                    _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld, threshold=threshold)
     return _erroranalysis_sort_dct(gold_dct, deprlst=deprlst), _erroranalysis_sort_dct(sys_dct, deprlst=deprlst), freqtable, freqtable_labels
 
-def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=None, alld=False):
+def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=None, alld=False, threshold=0):
     error_pair = False
     if DEBUG and pair['conll']['sent'] == 528:
         print pair
     sc = {}
+    sc_rev = {}
     for depr in deprlst:
         sc[depr] = ev.spancoverage(pair[depr]['holder_sys'], pair[depr]['holder_gold'])
+        sc_rev[depr] = ev.spancoverage(pair[depr]['holder_gold'], pair[depr]['holder_sys'])
+        if sc[depr] != sc_rev[depr]:
+            counters['partial_span' + depr] += 1
         if DEBUG and pair['conll']['sent'] == 528:
             print sc, alld
     if alld:
-        _erroranalysis_pair_stats(sc)
+        _erroranalysis_pair_stats(sc, sc_rev, threshold=threshold)
         error_pair = _erroranalysis_all(sc)
         if error_pair:
             counters['error_pairs'] += 1
@@ -85,15 +89,22 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
             print error_pair
             
     if error_pair:
-
+        
         # w/imp must be checked in another way
         wimp_pair = False
         wimp_syspair = set()
         for i, depr in enumerate(deprlst):
             if (isinstance(pair[depr]['holder_gold'], basestring)):
-                counters['holder_gold - w/imp - ' + depr] += 1
+                if pair[depr]['holder_gold'] == 'w':
+                    counters['holder_gold - w - ' + depr ] += 1
+                else:
+                    counters['holder_gold - imp - ' + depr ] += 1
                 wimp_pair = True
             elif (isinstance(pair[depr]['holder_sys'], basestring)):
+                if pair[depr]['holder_sys'] == 'w':
+                    counters['holder_sys - w - ' + depr ] += 1
+                else:
+                    counters['holder_sys - imp - ' + depr ] += 1
                 counters['holder_sys - w/imp - ' + depr] += 1
                 wimp_syspair.add(depr)
 
@@ -174,25 +185,56 @@ def erroranalysis_print_tagged_sentences(freqtable, deplst, sp):
     """
     In google docs, regex replace G(\w*)G to {$1}
 
-    @param freqtable Bla bla
+    @param freqtable 
     """
     count = 0
+    #for c in range(len(freqtable[-1])):
+    #    # sent nr
+    #    print c
+    #    # sent
+    #    p = sp
+    #    sent = deplst[int(p['sent'])+ 1]
+    #    for i, t in enumerate(sent):
+    #        if i+1 in p['exp']:
+    #            print "[{}]".format(t['form']),
+    #        elif not isinstance(p['holder_gold'], basestring) and i+1 in p['holder_gold']:
+    #            print "_{}_".format(t['form']),
+    #        elif False and not isinstance(p['holder_sys'], basestring) and i+1 in p['holder_sys']:
+    #            print "S{}S".format(t['form']),
+    #        else:
+    #            print "{}".format(t['form']),
+    #    # conll path
+
+    #    
+    #    print freqtable[0][c], freqtable[-1][c]
+        
     for p in sp:
         if count < len(freqtable[-1]) and freqtable[-1][count] == p['sent']:
-            print "\n{}\t".format(p['sent']),
+            # sent nr
+            print "\n\n{}\n".format(p['sent']),
             for i, t in enumerate(deplst[p['sent']]):
-                if i+1 in p['exp']:
-                    print "[{}]".format(t['form']),
-                elif i+1 in p['holder_gold']:
-                    print "G{}G".format(t['form']),
-                elif i+1 in p['holder_sys']:
-                    print "S{}S".format(t['form']),
-                else:
-                    print "{}".format(t['form']),
+                # sent
+                try:
+                    if i+1 in p['exp']:
+                        print "[{}]".format(t['form']),
+                    elif not isinstance(p['holder_gold'], basestring) and i+1 in p['holder_gold']:
+                        print "{{{}}}".format(t['form']),
+                    elif False and not isinstance(p['holder_sys'], basestring) and i+1 in p['holder_sys']:
+                        print "S{}S".format(t['form']),
+                    else:
+                        print "{}".format(t['form']),
+                except:
+                    print p
+                    raise
+            # path
+            print "\n"
+            for i, t in enumerate(deplst[p['sent']]):
+                print t['head'],
+            # synt_path path
+            print ""
+            print "\n", freqtable[5][count]
+            print "\n"
             count += 1
-        elif count >= len(freqtable[-1]):
-            print count
-            print freqtable[-1][-1]
 
 def _erroranalysis_sort_dct(dct, deprlst=DEPREPS):
     return_dct = {}
@@ -208,12 +250,24 @@ def _erroranalysis_better(sc, best, notbest):
 
 #tmpcnt = Counter()
 
-def _erroranalysis_pair_stats(sc, threshold=0):
-    correct = "pairs without error in - "
-    for dep, v in sorted(sc.items()):
-        if v > threshold:
-            correct += str(dep) + '/'
-    if correct == "pairs without error in - ":
+def _erroranalysis_pair_stats(sc, sc_rev, threshold=0):
+    counters['pairs total'] += 1
+    correct = "pairs found with\t"
+    if threshold == 0:
+        for dep, v in sorted(sc.items()):
+            if v > 0:
+                correct += str(dep) + '/'
+    else:
+        for depv, deprv in itertools.izip(sorted(sc.items()), sorted(sc_rev.items())):
+            dep, v = depv
+            dep_rev, v_rev = deprv
+            if v != v_rev:
+                counters['partial_span2' + dep] += 1
+            #if counters['pairs total'] > 20: raise
+            if v > threshold and v_rev > threshold:
+                #print v,v_rev
+                correct += str(dep) + '/'
+    if correct == "pairs found with\t":
         correct += "None"
     counters[correct] += 1
 
@@ -226,15 +280,14 @@ def _erroranalysis_all(sc, threshold=0):
 def print_counters():
     print "= Counters ="
     for k,v in sorted(counters.items(), key=lambda x: x[0]):
-        print k, v
+        print k, "\t", v
             
 if __name__ == "__main__":
     counters.clear()
     print "= Erroranalysis ="
-    #stats_srl = read_jsonfile(DATA_PREFIX + '/out/2016-06-21-dump.json.stats.json')
     sp = {}
     deplst = {}
-    spfolder = '/out/dev/gold-restrict-sametype-json'
+    spfolder = '/out/dev/new_gold-restrict-sameexp'
     sp['dt'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
     print len(sp['dt'])
     sp['sb'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
@@ -246,20 +299,64 @@ if __name__ == "__main__":
     # # # deplst['srl'] = readconll(DATA_PREFIX + '/out/devtest.conll.out')
     # # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
     #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=True, feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
-    #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='conll', alld=False, feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
-    gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=True, feature='deprel_to_parent')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
-
+    #Count
+    gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='conll', alld=True, feature='synt_path', threshold=0.99)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
     print_counters()
 
+    # conll best
+    #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='conll', feature='synt_path', threshold=0)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+
+    # dt best
+    #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='dt', feature='synt_path', threshold=0.99)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+
+    # sb best
+    #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='sb', feature='synt_path', threshold=0.99)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+
+    #print "= Gold ="
     #erroranalysis_print_dct(gdct)
+    #print "= System ="
     #erroranalysis_print_dct(sdct)
     #print erroranalysis_print_table(freqtable, freqtable_labels)
-    #print erroranalysis_print_tagged_sentences(freqtable, deplst['sb'], sp['sb'])
+    #print erroranalysis_print_tagged_sentences(freqtable, deplst['conll'], sp['conll'])
     #print erroranalysis_print_tagged_sentences(freqtable, deplst['sb'], sp['sb'])
     #print argmaxcxh(holder_dct['peep'], candidates['dse'])
     #print cand_in_ghodct(list(candidates['dse'])[1], holder_dct['peep'])
     
+
+    ##find ex sentence, stats
+    #for i, s in enumerate(deplst['dt']):
+    #    last = False
+    #    for w in s:
+    #        if last and last['form'] == 'has' and w['pos'][0] == 'V':
+    #            print i, ": ", 
+    #            for w2 in s:
+    #                print w2['form'],
+    #            print ""
+    #        last = w
+
+#137 :  She added that the Argentine government has declared a 30-day emergency . 
+
+    #lsts = read_jsonfile(DATA_PREFIX + spfolder + '/gold-r-sameex.json')
+    #snum = 284
+    #for p in sp['dt']:
+    #    if p['sent'] == snum:
+    #        print p
+            
+    """
+    {u'confidence': 0.9551899339110933, u'exptype': u'dse', u'holder_gold': set([1]), u'holder_sys': set([1]), u'exp': set([3, 4]), u'coref_gold': [set([1])], u'sent': 272}
+    {u'confidence': 0.8635499674787045, u'exptype': u'dse', u'holder_gold': set([1]), u'holder_sys': set([1]), u'exp': set([13, 14, 15]), u'coref_gold': [set([1])], u'sent': 272}
+    {u'confidence': 0.787190238504431, u'exptype': u'ese', u'holder_gold': set([1]), u'holder_sys': set([1]), u'exp': set([10, 11]), u'coref_gold': [set([1])], u'sent': 272}
+    """
+                
+    #for i, w in enumerate(deplst['dt'][snum]):
+    #    print "", i+1, w['form'], w['head']
+    #    
+    #for i, w in enumerate(deplst['sb'][snum]):
+    #    print "", i+1, w['form'], w['head']
+
+    #for i, w in enumerate(deplst['conll'][272]):
+    #    print "", i+1, w['form'], w['head']
 
             
                 
