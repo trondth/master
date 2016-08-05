@@ -31,15 +31,15 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
     gold_dct = {}
     sys_dct = {}
     for depr in deprlst:
-        gold_dct[depr] = OrderedDict()
-        sys_dct[depr] = OrderedDict()
+        gold_dct[depr] = Counter()
+        sys_dct[depr] = Counter()
         freqtable_labels.append('gold_' + depr)
         if feature == 'synt_path':
             freqtable.extend([[] for i in range(2)])
             freqtable_labels.append('sys_' + depr)
         else:
             freqtable.extend([[] for i in range(1)])
-    freqtable.extend([[]])
+    freqtable.extend([[],[]])
     #print freqtable
     #print deprlst
     if deprlst == DEPREPS:
@@ -63,7 +63,7 @@ def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld
                     pair['srl']['exp'] == pair['conll']['exp'] and
                     pair['srl']['sent'] == pair['conll']['sent']):
                     _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=feature, alld=alld, threshold=threshold)
-    return _erroranalysis_sort_dct(gold_dct, deprlst=deprlst), _erroranalysis_sort_dct(sys_dct, deprlst=deprlst), freqtable, freqtable_labels
+    return gold_dct, sys_dct, freqtable, freqtable_labels
 
 def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqtable_labels, best, notbest, ev, feature=None, alld=False, threshold=0):
     error_pair = False
@@ -88,84 +88,88 @@ def _erroranalysis_pair(lst, pair, gold_dct, sys_dct, deprlst, freqtable, freqta
         if DEBUG and pair['conll']['sent'] == 528:
             print error_pair
             
+    #print pair
+    #raise
+    #if pair['sent'] == 439:
+    #    print pair
     if error_pair:
         
         # w/imp must be checked in another way
-        wimp_pair = False
-        wimp_syspair = set()
-        for i, depr in enumerate(deprlst):
-            if (isinstance(pair[depr]['holder_gold'], basestring)):
-                if pair[depr]['holder_gold'] == 'w':
-                    counters['holder_gold - w - ' + depr ] += 1
-                else:
-                    counters['holder_gold - imp - ' + depr ] += 1
-                wimp_pair = True
-            elif (isinstance(pair[depr]['holder_sys'], basestring)):
-                if pair[depr]['holder_sys'] == 'w':
-                    counters['holder_sys - w - ' + depr ] += 1
-                else:
-                    counters['holder_sys - imp - ' + depr ] += 1
-                counters['holder_sys - w/imp - ' + depr] += 1
-                wimp_syspair.add(depr)
+        #wimp_pair = set()
+        #wimp_syspair = set()
+        #for i, depr in enumerate(deprlst):
+        #    if (isinstance(pair[depr]['holder_gold'], basestring)):
+        #        if pair[depr]['holder_gold'] == 'w':
+        #            counters['holder_gold - w - ' + depr ] += 1
+        #        else:
+        #            counters['holder_gold - imp - ' + depr ] += 1
+        #        wimp_pair.add(depr)
+        #    elif (isinstance(pair[depr]['holder_sys'], basestring)):
+        #        if pair[depr]['holder_sys'] == 'w':
+        #            counters['holder_sys - w - ' + depr ] += 1
+        #        else:
+        #            counters['holder_sys - imp - ' + depr ] += 1
+        #        counters['holder_sys - w/imp - ' + depr] += 1
+        #        wimp_syspair.add(depr)
 
-        if not wimp_pair:
+        if True:
+            print pair['conll']['holder_sys'], pair['conll']['holder_gold']
             freqtable[-1].append(pair[best]['sent'])
+            freqtable[-2].append(pair[best]['exp'])
             for i, depr in enumerate(deprlst):
                 sent = lst[depr][pair[depr]['sent']]
                 ex_id = getex_head(pair[depr]['exp'], sent)
-                g_id = getex_head(pair[depr]['holder_gold'], sent)
-                if depr not in wimp_syspair:
+                g_id = False
+                if not isinstance(pair[depr]['holder_gold'], basestring):
+                    g_id = getex_head(pair[depr]['holder_gold'], sent)
+                s_id = False
+                if not isinstance(pair[depr]['holder_sys'], basestring):
                     s_id = getex_head(pair[depr]['holder_sys'], sent)
-                else:
-                    s_id = False
                 if feature == 'holder_head_pos':
-                    g_head_pos_str = sent[g_id-1]['pos']
-                    gold_dct[depr][g_head_pos_str] = gold_dct[depr].get(g_head_pos_str, 0) + 1
+                    if g_id:
+                        g_head_pos_str = sent[g_id-1]['pos']
+                    else:
+                        g_head_pos_str = "n/a ({})".format(pair[depr]['holder_gold'])
                     if s_id:
                         s_head_pos_str = sent[s_id-1]['pos']
                     else:
-                        s_head_pos_str = "n/a (w/imp)"
-                    sys_dct[depr][s_head_pos_str] = gold_dct[depr].get(s_head_pos_str, 0) + 1
+                        s_head_pos_str = "n/a ({})".format(pair[depr]['holder_sys'])
+                    gold_dct[depr][g_head_pos_str] += 1
+                    sys_dct[depr][s_head_pos_str] += 1
                     freqtable[i*2].append(g_head_pos_str)
                     freqtable[i*2+1].append(s_head_pos_str)
                 if feature == 'ex_head_pos':
                     ex_head_pos_str = sent[ex_id-1]['pos']
-                    if ex_head_pos_str in gold_dct[depr]:
-                        gold_dct[depr][ex_head_pos_str] += 1
-                    else:
-                        gold_dct[depr][ex_head_pos_str] = 1
+                    gold_dct[depr][ex_head_pos_str] += 1
                     freqtable[i].append(ex_head_pos_str)
                 if feature == 'deprel_to_parent':
                     deprel_to_parent_str = sent[ex_id-1]['deprel']
-                    if deprel_to_parent_str in gold_dct[depr]:
-                        gold_dct[depr][deprel_to_parent_str] += 1
-                    else:
-                        gold_dct[depr][deprel_to_parent_str] = 1
+                    gold_dct[depr][deprel_to_parent_str] += 1
                     freqtable[i].append(deprel_to_parent_str)
                 if feature == 'synt_path':
                     daughterlists_sent(sent)
-                    if s_id:
-                        s_synt_path = syntactic_path(s_id, ex_id, sent)
+                    if g_id:
+                        g_synt_path = syntactic_path(s_id, ex_id, sent)
                     else:
-                        s_synt_path = "n/a (w/imp)"
-                    g_synt_path = syntactic_path(g_id, ex_id, sent)
+                        g_synt_path = "n/a ({})".format(pair[depr]['holder_gold'])
+                    if s_id:
+                        s_synt_path = syntactic_path(g_id, ex_id, sent)
+                    else:
+                        s_synt_path = "n/a ({})".format(pair[depr]['holder_sys'])
                     freqtable[i*2].append(g_synt_path)
                     freqtable[i*2+1].append(s_synt_path)
-                    if s_synt_path in sys_dct[depr]:
-                        sys_dct[depr][s_synt_path] += 1
-                    else:
-                        sys_dct[depr][s_synt_path] = 1
-                    if g_synt_path in gold_dct[depr]:
-                        gold_dct[depr][g_synt_path] += 1
-                    else:
-                        gold_dct[depr][g_synt_path] = 1
+                    sys_dct[depr][s_synt_path] += 1
+                    gold_dct[depr][g_synt_path] += 1
     return gold_dct, sys_dct, freqtable, freqtable_labels
                     
-def erroranalysis_print_dct(dct, deprlst=DEPREPS):
+def erroranalysis_print_dct(dct, deprlst=DEPREPS, n=10):
     for depr in deprlst:
-        print "\n\n{}\n".format(depr)
-        for t in reversed(dct[depr].items()):
-            print u"{}\t{}".format(t[0], t[1])
+        print "\n= {} =".format(depr)
+        for k,v in dct[depr].most_common(n):
+            print k, "\t", v
+    #    print "\n\n{}\n".format(depr)
+    #    for t in reversed(dct[depr].items()):
+    #        print u"{}\t{}".format(t[0], t[1])
 
 def erroranalysis_print_table(freqtable, freqtable_labels):
     for i in freqtable_labels:
@@ -209,7 +213,8 @@ def erroranalysis_print_tagged_sentences(freqtable, deplst, sp):
     #    print freqtable[0][c], freqtable[-1][c]
         
     for p in sp:
-        if count < len(freqtable[-1]) and freqtable[-1][count] == p['sent']:
+        if (count < len(freqtable[-1]) and freqtable[-1][count] == p['sent']
+            and freqtable[-2][count] == p['exp']):
             # sent nr
             print "\n\n{}\n".format(p['sent']),
             for i, t in enumerate(deplst[p['sent']]):
@@ -227,20 +232,20 @@ def erroranalysis_print_tagged_sentences(freqtable, deplst, sp):
                     print p
                     raise
             # path
-            print "\n"
-            for i, t in enumerate(deplst[p['sent']]):
-                print t['head'],
+            #print "\n"
+            #for i, t in enumerate(deplst[p['sent']]):
+                #print t['head'],
             # synt_path path
             print ""
-            print "\n", freqtable[5][count]
+            print "\n", freqtable[4][count]
             print "\n"
             count += 1
 
-def _erroranalysis_sort_dct(dct, deprlst=DEPREPS):
-    return_dct = {}
-    for depr in deprlst:
-        return_dct[depr] = OrderedDict(sorted(dct[depr].iteritems(), key=lambda k: k[1]))
-    return return_dct
+#def _erroranalysis_sort_dct(dct, deprlst=DEPREPS):
+#    return_dct = {}
+#    for depr in deprlst:
+#        return_dct[depr] = OrderedDict(sorted(dct[depr].iteritems(), key=lambda k: k[1]))
+#    return return_dct
 
 def _erroranalysis_better(sc, best, notbest):
     for depr in notbest:
@@ -279,8 +284,13 @@ def _erroranalysis_all(sc, threshold=0):
 
 def print_counters():
     print "= Counters ="
+    print "Span coverage threshold: ", args.threshold
     for k,v in sorted(counters.items(), key=lambda x: x[0]):
         print k, "\t", v
+
+def print_synt(lst, sent):
+    for c, w in enumerate(lst[sent]):
+        print c+1, "\t", w['head'], "\t", w['deprel'], "\t", w['form']
             
 if __name__ == "__main__":
     counters.clear()
@@ -300,12 +310,45 @@ if __name__ == "__main__":
     # # #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, deprlst=['conll', 'srl'], best='srl') #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos) synt_path
     #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=True, feature='synt_path')# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('-spfiles')
+    argparser.add_argument('-conllfiles')
+    argparser.add_argument('-i', action='store_true')
+    argparser.add_argument('-synt')
+    argparser.add_argument('-feature')
+    argparser.add_argument('-best')
+    argparser.add_argument('-sys_cnt', action='store_true')
+    argparser.add_argument('-gold_cnt', action='store_true')
+    argparser.add_argument('-n', type=int)
+    argparser.add_argument('-dump')
+    argparser.add_argument('-t', '--threshold', type=float, default=0)
+    argparser.add_argument('-count', action='store_true')
+    #args = argparser.parse_args(args=['-dump', 'sents'])
+    #args = argparser.parse_args(args=['-i'])
+    #args = argparser.parse_args(args=['-count', '-t', '0.99'])
+    #args = argparser.parse_args(args=['-count'])
+    args = argparser.parse_args(args=[
+        '-gold_cnt',
+        #'-sys_cnt',
+        '-n', '10',
+        '-feature', 'syntpath',
+        '-t', '0',
+        '-best', 'conll'
+        ])
+    
+
+    if args.synt:
+        print_synt(deplst['conll'], args.synt)
+
+
     #Count
-    gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='conll', alld=True, feature='synt_path', threshold=0.99)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
-    print_counters()
+    if args.count:
+        gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, best='conll', alld=True, feature='synt_path', threshold=args.threshold)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+        print_counters()
 
     # conll best
-    #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='conll', feature='synt_path', threshold=0)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
+    if args.dump == 'sents' or (args.feature == 'syntpath' and args.best == 'conll'):
+        gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='conll', feature='synt_path', threshold=args.threshold)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
     # dt best
     #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='dt', feature='synt_path', threshold=0.99)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
@@ -313,12 +356,15 @@ if __name__ == "__main__":
     # sb best
     #gdct, sdct, freqtable, freqtable_labels = erroranalysis(deplst, sp, alld=False, best='sb', feature='synt_path', threshold=0.99)# feature='holder_head_pos') #, alld=True) #alld=True)#, feature='holder_head_pos') #, feature='ex_head_pos)
 
-    #print "= Gold ="
-    #erroranalysis_print_dct(gdct)
-    #print "= System ="
-    #erroranalysis_print_dct(sdct)
+    if args.gold_cnt:
+        print "= Most common errors, gold holder ="
+        erroranalysis_print_dct(gdct, n=args.n)
+    if args.sys_cnt:
+        print "= Most common errors, system holder ="
+        erroranalysis_print_dct(sdct, n=args.n)
     #print erroranalysis_print_table(freqtable, freqtable_labels)
-    #print erroranalysis_print_tagged_sentences(freqtable, deplst['conll'], sp['conll'])
+    if args.dump:
+        print erroranalysis_print_tagged_sentences(freqtable, deplst['conll'], sp['conll'])
     #print erroranalysis_print_tagged_sentences(freqtable, deplst['sb'], sp['sb'])
     #print argmaxcxh(holder_dct['peep'], candidates['dse'])
     #print cand_in_ghodct(list(candidates['dse'])[1], holder_dct['peep'])
@@ -361,3 +407,5 @@ if __name__ == "__main__":
             
                 
     
+    # 348 - holder er en konjunksjon
+    # 531
