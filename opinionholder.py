@@ -438,7 +438,7 @@ def getex_head(ex_set, sent):
     for num in ex_set:
         #print ": ", sent[num-1]['head']
         try:
-            if sent[num-1]['head'] not in ex_set:
+            if int(sent[num-1]['head']) not in ex_set:
                 return num
         except:
             print sent
