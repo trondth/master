@@ -312,6 +312,8 @@ def daughterlists_sent(sent):
             #print 'root'
         else:
             print u"ERROR in conll-file. head: {}, form: {} len(sent): {}".format(head, token['form'], len(sent))
+            print "Set head to 0"
+            token['head'] = 0
             #raise ValueError(u"ERROR: {} {}. len(sent): {}".format(head, token['form'], len(sent)))
             
 def cleandaughterlists(lst):
@@ -436,7 +438,7 @@ def getex_head(ex_set, sent):
     for num in ex_set:
         #print ": ", sent[num-1]['head']
         try:
-            if sent[num-1]['head'] not in ex_set:
+            if int(sent[num-1]['head']) not in ex_set:
                 return num
         except:
             print sent
@@ -841,22 +843,36 @@ def count_holder_candidates(lst, exptype=False, check_exp=False):
                 pass
     return counters
 
-def cleanupnonespanexpressions(lst):
+def cleanupnonespanexpressions(lst, partial=True):
     for sent in lst:
         for t in sent:
             t['dse'] = False
             t['ese'] = False
             t['ose'] = False
             for gate in t['GATE']:
-                if gate['slice'].start != gate['slice'].stop:
-                    tmp = gate['ann_type']
-                    #if tmp == 'GATE_objective-speech-event':
-                    if re_ose.match(tmp):
-                        t['ose'] = True #tmp[4]
-                    elif re_ese.match(tmp): #tmp == 'GATE_expressive-subjectivity':
-                        t['ese'] = True #tmp[4]
-                    elif re_dse.match(tmp): #tmp == 'GATE_direct-subjective':
-                        t['dse'] = True #tmp[4]
+                if partial:
+                    if gate['slice'].start != gate['slice'].stop:
+                        tmp = gate['ann_type']
+                        #if tmp == 'GATE_objective-speech-event':
+                        if re_ose.match(tmp):
+                            t['ose'] = True #tmp[4]
+                        elif re_ese.match(tmp): #tmp == 'GATE_expressive-subjectivity':
+                            t['ese'] = True #tmp[4]
+                        elif re_dse.match(tmp): #tmp == 'GATE_direct-subjective':
+                            t['dse'] = True #tmp[4]
+                else:
+                    str = t['slice'][6:-1].split(',')
+                    tslice = slice(int(str[0]), int(str[1]))
+                    if (gate['slice'].start != gate['slice'].stop and
+                            gate['slice'].stop >= tslice.stop):
+                        tmp = gate['ann_type']
+                        #if tmp == 'GATE_objective-speech-event':
+                        if re_ose.match(tmp):
+                            t['ose'] = True #tmp[4]
+                        elif re_ese.match(tmp): #tmp == 'GATE_expressive-subjectivity':
+                            t['ese'] = True #tmp[4]
+                        elif re_dse.match(tmp): #tmp == 'GATE_direct-subjective':
+                            t['dse'] = True #tmp[4]
             
 def count_holder_candidates_missing(lst, holder_exp_pairs):
     holder_candidates = 0
@@ -1009,9 +1025,16 @@ class evaluate:
         @param s_p_gold list of gold exp-holder pairs
         @return List of system pairs for unique expressions with highest confidence score
         """
-        counters['s_p_int'] = len(s_p_int)
-        if not s_p_imp and not s_p_w:
-            return s_p_int
+        try:
+            if s_p_int:
+                counters['s_p_int'] = len(s_p_int)
+            if not s_p_imp and not s_p_w:
+                return s_p_int
+        except:
+            print "1029-feil"
+            print s_p_int
+            print s_p_imp
+            print s_p_w
         s_p = []
         if not s_p_imp:
             s_p_imp = []
@@ -1023,22 +1046,32 @@ class evaluate:
             for it in s_p_w:
                 print it['sent'], it['exp'], it['holder_gold']
         for cur_int, cur_imp, cur_w in itertools.izip_longest(s_p_int, s_p_imp, s_p_w):
-            cur = cur_int
-            if cur_imp and (cur_imp['confidence'] > 0.5 and cur_imp['confidence'] > cur['confidence']) or cur['confidence'] == 0:
-                if cur_imp['sent'] != cur['sent']:
-                    raise
+            skipthis = False
+            if cur_int:
+                cur = cur_int
+            elif cur_imp:
                 cur = cur_imp
-            if cur_w:
-                if cur_w['sent'] != cur['sent']:
-                    print "int.. ", len(s_p_int)
-                    print "imp.. ", len(s_p_imp)
-                    print "w..   ", len(s_p_w)
-                    print cur_w
-                    print cur
-                    raise
-                if (cur_w['confidence'] > 0.5 and cur_w['confidence'] > cur['confidence']) or cur['confidence'] == 0:
-                    cur = cur_w
-            s_p.append(cur)
+            elif cur_w:
+                cur = cur_w
+            else:
+                print "THIS IS NOT A PAIR"
+                skipthis = True
+            if not skipthis:
+                if cur_imp and (cur_imp['confidence'] > 0.5 and cur_imp['confidence'] > cur['confidence']) or cur['confidence'] == 0:
+                    if cur_imp['sent'] != cur['sent']:
+                        raise
+                    cur = cur_imp
+                if cur_w:
+                    if cur_w['sent'] != cur['sent']:
+                        print "int.. ", len(s_p_int)
+                        print "imp.. ", len(s_p_imp)
+                        print "w..   ", len(s_p_w)
+                        print cur_w
+                        print cur
+                        raise
+                    if (cur_w['confidence'] > 0.5 and cur_w['confidence'] > cur['confidence']) or cur['confidence'] == 0:
+                        cur = cur_w
+                s_p.append(cur)
         if DEBUG:
             print "Pairs"
             for p in s_p:
@@ -1057,12 +1090,13 @@ class evaluate:
         
         if isinstance(results, np.ndarray):
             cur = None
-            curmax = None
+            curmax = -1
             for i, item in enumerate(lst):
                 if cur and (item['sent'] != cur['sent'] or
                                 item['exp'] != cur['exp']):
                     cur.update({'confidence': curmax})
                     system_pairs.append(cur)
+                    curmax = -1
                     cur = None
                 if not cur:
                     curmax = results[i][1]
@@ -1079,7 +1113,7 @@ class evaluate:
             for it in gold_lst:
                 if len(system_pairs) > c:
                     if (it['sent'] == system_pairs[c]['sent'] and
-                       it['exp'].intersection(system_pairs[c]['exp'])):
+                       it['exp'] == system_pairs[c]['exp']):
                         s_p_new.append(system_pairs[c])
                         c += 1
                     else:

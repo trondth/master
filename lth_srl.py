@@ -21,6 +21,10 @@ class Lth_srl:
         return conllfile + '.out'
 
 if __name__ == "__main__":
-    testconll = "devtest.conll"
+    #testconll = "devtest.conll"
+    testconll =  DATA_PREFIX + "/out/heldouttest.conll2008.conll"
+    trainconll = DATA_PREFIX + "/out/heldouttrain.conll2008.conll"
     lthsrl = Lth_srl()
     outfile = lthsrl.run(testconll)
+    outfile_t = lthsrl.run(trainconll)
+
