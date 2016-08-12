@@ -2,69 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from opinionholder import *
-import random # > sign.
 
 DEBUG = False
-VERBOSE = True
-
-def prec_bootstrap(lst):
-    psum = 0.0
-    for p in lst:
-        psum += p['p_sc']
-    return psum / len(lst)
-
-def bootstrap(Xa, Xb, b=2):
-    
-    """
-    @return p-value
-    """
-    if len(Xa) != len(Xb):
-        raise ValueError('Xa and Xb must be of equal length')
-    # span coverages
-    for p in Xa + Xb:
-        p['p_sc'] = ev.spancoverage(p['holder_gold'], p['holder_sys'])
-        p['r_sc'] = ev.spancoverage(p['holder_sys'], p['holder_gold'])
-
-    # delta
-    prec_Xa = prec_bootstrap(Xa)
-    prec_Xb = prec_bootstrap(Xb)
-    delta = (prec_Xb - prec_Xa)
-
-    x = []
-    
-    for i in range(b):
-        x.append({'a': [], 'b': []})
-        for rand_pair in range(len(Xa)):
-            random_i = random.randrange(len(Xa))
-            x[i]['a'].append(Xa[random_i])
-            x[i]['b'].append(Xb[random_i])
-        x[i]['prec_Xa'] = prec_bootstrap(x[i]['a'])
-        x[i]['prec_Xb'] = prec_bootstrap(x[i]['b'])
-        x[i]['delta'] = (x[i]['prec_Xb'] - x[i]['prec_Xa'])
-
-    s = 0
-    for xi in x:
-        if xi['delta'] > 2 * delta:
-            s += 1
-
-    if VERBOSE:
-        for i, xi in enumerate(x):
-            print "\n\nX_" + str(i)
-            for k, v in sorted(xi.items()):
-                print "\n", k
-                if isinstance(v, list):
-                    for it in v:
-                        if 'p_sc' in it:
-                            print it['p_sc']
-                else:
-                    print v
-
-    return float(s)/b
-            
-XA = sp['dt'][112:117]
-XB = sp['conll'][112:117]
-bootstrap = bootstrap(XA, XB)
-print "p-value: ", bootstrap
 
 def erroranalysis(lst, sp, deprlst=DEPREPS, best='sb', feature='synt_path', alld=False, threshold=0):
     """
@@ -474,26 +413,29 @@ if __name__ == "__main__":
     #args = argparser.parse_args(args=['-count', '-t', '0.99'])
     #args = argparser.parse_args(args=['-count'])
     args = argparser.parse_args(args=[
+        #'-dump', 'sents',
         #'-gold_cnt',
         #'-sys_cnt',
         #'-print_table',
-        ##'-n', '8',
+        #'-n', '8',
         #'-feature', 'synt_path',
-        #'-feature', 'deprel_to_parent',
-        #'-feature', 'dom_ex_type',
-        #'-feature', 'holder_length',
+        ##'-feature', 'deprel_to_parent',
+        ##'-feature', 'dom_ex_type',
+        ##'-feature', 'holder_length',
         #'-t', '0.99',
-        #'-count'
+        ##'-count'
         #'-deprellst', 'dt',
         #'-best', 'conll',
         ##'-best', 'none',
         #'-print_s', '8', # NMOD
-        #'-print_s', '588', # P
-        #'-print_ex', 'set([2])', # P
-        #'-print_s', '1235',
-        #'-print_ex', 'set([11])',
+        #'-print_ex', 'set([16, 17])', # and
+        #'-print_s', '549', # and
+        '-print_s', '588', # P
+        '-print_ex', 'set([2])', # P
+        #'-print_s', '345', # partial overlap dt
+        #'-print_ex', 'set([46, 47])', # partial overlap dt
         ##'-print_ex', 'set([5, 6, 7, 8, 9, 10])',
-        #'-print_dep', 'conll'
+        '-print_dep', 'conll'
         ])
 
     #for i in range(50):
@@ -630,3 +572,74 @@ if __name__ == "__main__":
 
     #delta = abs(prec_XA - prec_XB)
 
+#for i, p in enumerate(sp['dt']):
+#    if (isinstance(p['holder_gold'], set) and isinstance(p['holder_sys'], set)
+#            and p['holder_gold'].intersection(p['holder_sys']) and
+#            len(p['holder_gold']) > len(p['holder_sys'])):
+#        for j, w in enumerate(deplst['dt'][p['sent']]):
+#            if j+1 in p['holder_gold'] and w['form'] == 'and':
+#                print i
+# """
+# 182
+# 182
+# 268
+# 346
+# 400
+# 406
+# 502
+# 507
+# 513
+# 516
+# 650
+# 682
+# 776
+# 1433
+# 1699
+# 1730
+# 1743
+# 2108
+# """
+
+def print_qa_cases(sp, deplst):
+    for i, p in enumerate(sp['conll']):
+        if deplst['conll'][p['sent']][sorted(list(p['exp']))[0]-1]['form'] == ':':
+            print i
+    
+    for depr in DEPREPS:
+        for i in [371,
+                      542,
+                      548,
+                      553,
+                      555,
+                      561,
+                      567,
+                      568,
+                      571,
+                      575,
+                      2305,
+                      2306,
+                      2311,
+                      2312,
+                      2316,
+                      2319,
+                      2320,
+                      2323,
+                      2325,
+                      2326,
+                      2329,
+                      2333,
+                      2337,
+                      2348,
+                      2350,
+                      2351,
+                      2353,
+                      2354,
+                      2357,
+                      2362,
+                      2363]:
+            print i, "T" if sp[depr][i]['holder_gold'].intersection(sp[depr][i]['holder_sys']) else "F"
+            if sp[depr][i]['holder_gold'].intersection(sp[depr][i]['holder_sys']):
+                counters[': found with ' + depr] += 1
+            else:
+                counters[': not found with ' + depr] += 1
+        
