@@ -843,7 +843,7 @@ def count_holder_candidates(lst, exptype=False, check_exp=False):
                 pass
     return counters
 
-def cleanupnonespanexpressions(lst, partial=True):
+def cleanupnonespanexpressions(lst, partial=False):
     for sent in lst:
         for t in sent:
             t['dse'] = False
@@ -1426,8 +1426,8 @@ def jointestandresult(tlst, rlst):
 
 def featurestats(lst, features='all'):
 
-    allfeatures = {'synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
-                'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent'}
+    allfeatures = set(['synt_path', 'ex_head_word', 'ex_head_lemma', 'ex_head_pos', 'cand_head_pos', 'cand_head_word', 'dom_ex_type', 'ex_verb_voice', 'context_r_pos',
+                'context_r_word', 'context_l_pos', 'context_l_word', 'deprel_to_parent'])
     if features == 'all':
         features = allfeatures
     if isinstance(features, basestring):
