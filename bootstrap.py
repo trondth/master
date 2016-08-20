@@ -85,27 +85,70 @@ def bootstrap(Xa, Xb, b=10000, t='prec'):
         print "Delta: ", delta
         for i, xi in enumerate(x):
             print "\ndelta(x_" + str(i) + "): ", xi['delta']
-            #for k, v in sorted(xi.items()):
-                #print "\n", k
-                #if isinstance(v, list):
-                #    for it in v:
-                #        if 'p_sc' in it:
-                #            print it['p_sc']
-                #else:
-                #    print v
-    print "s: ", s
-    print "b: ", b
+            for k, v in sorted(xi.items()):
+                print "\n", k
+                if isinstance(v, list):
+                    for it in v:
+                        if 'p_sc' in it:
+                            print it['p_sc']
+                else:
+                    print v
+        print "\nPrec for Xa"
+        for p in Xa:
+            print p['p_sc']
+        print "ssc: ", prec_Xa
+        print "\nPrec for Xb"
+        for p in Xb:
+            print p['p_sc']
+        print "ssc: ", prec_Xb
+    #print "s: ", s
+    #print "b: ", b
 
     return float(s)/b
             
 sp = {}
-spfolder = '/out/heldout'
-#spfolder = '/out/dev/exhfix-gold-restrict-sameexp'
+#spfolder = '/out/heldout'
+spfolder = '/out/dev/exhfix-gold-restrict-sameexp'
 sp['dt'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
 sp['sb'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
 sp['conll'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
 
-XA = sp['conll'] # [112:117]
-XB = sp['sb'] # [112:117]
-bootstrap = bootstrap(XA, XB, b=10000, t='f')
-print "p-value: ", bootstrap
+#347
+#518
+#536
+#657
+#658
+#792
+#795
+#796
+#1369
+#1370
+#1372
+#2329
+
+#XA = sp['dt']#[112:117]
+#XB = sp['conll']#[112:117]
+#XA = sp['sb'][112:117]# [2305:2306]
+#XB = sp['conll'][112:117]# [2302:2306] # 310 533 2235 2303
+XA = sp['dt'][1338:1343]
+XB = sp['conll'][1338:1343]
+
+VERBOSE = False
+pvalue = bootstrap(XA, XB, b=10000, t='prec')
+print "p-value: ", pvalue
+
+#for i in range(len(XA)-6):
+#    XA = sp['dt'][i:i+5]
+#    XB = sp['conll'][i:i+5]
+#    pvalue = bootstrap(XA, XB, b=10, t='prec')
+#    if 0.2 < pvalue < 0.5:
+#        pthisa = False
+#        pthisb = False
+#        for p in XA:
+#            if 0 < p['p_sc'] < 1:
+#                pthisa = True
+#        for p in XB:
+#            if 0 < p['p_sc'] < 1:
+#                pthisb = True
+#        if pthisa and pthisb:
+#            print "p-value: ", pvalue, " - ", i

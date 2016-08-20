@@ -20,7 +20,23 @@ On this project github site, we provide the source code that we developed for th
 
 After cloning the repository, a config file should be created, overriding the information in the default settings file, `masters_project-default.cfg`.
 
-We provide in the folder `preprocessed_files` the preprocessed files for error analysis and experimenting with features. In the section [quick run](#quickrun) below, we will describe how to do this.
+We provide in the folder `preprocessed_files` the preprocessed files for error analysis and experimenting with features.
+
+# <a name="quickrun"></a>Quick run
+
+To use the system with the preprocessed files, set the path `masters_project.cfg` to the folder with the preprocessed files.
+
+We give three examples of usage:
+
+## Error analysis
+
+## Running the system
+
+## Featurestats
+
+# <a name="fullsystem"></a>Running the full system
+
+## Requirements
 
 To run the full system, a number of tools need to install:
 
@@ -30,14 +46,6 @@ To run the full system, a number of tools need to install:
 - MPQA Opinion Corpus
 - [Subjectivity Lexicon](http://mpqa.cs.pitt.edu/lexicons/subj_lexicon/) (Wilson, Wiebe, and Hoffmann)
 - LTH SRL parser
-- Bohnet & Nivre parser
+- Bohnet & Nivre parser and models
 - Liblinear
 - Wapiti
-
-# <a name="quickrun"></a>Quick run
-
-Will be provided in few days.
-
-# <a name="fullsystem"></a>Running the full system
-
-Will be provided in few days.
