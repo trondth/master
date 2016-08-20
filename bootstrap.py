@@ -29,8 +29,12 @@ def bootstrap(Xa, Xb, b=10000, t='prec'):
     
     # span coverages
     for p in Xa + Xb:
-        p['p_sc'] = ev.spancoverage(p['holder_gold'], p['holder_sys'])
-        p['r_sc'] = ev.spancoverage(p['holder_sys'], p['holder_gold'])
+        if 'coref_gold' in p and len(p['coref_gold']) > 1:
+            holder_gold = ev.check_coref(p['coref_gold'], p['holder_sys'])
+        else:
+            holder_gold = p['holder_gold']
+        p['p_sc'] = ev.spancoverage(holder_gold, p['holder_sys'])
+        p['r_sc'] = ev.spancoverage(p['holder_sys'], holder_gold)
 
     # delta
     prec_Xa = prec_bootstrap(Xa)
@@ -43,9 +47,9 @@ def bootstrap(Xa, Xb, b=10000, t='prec'):
     elif t == 'rec':
         delta = (rec_Xb - rec_Xa)
     elif t == 'f':
-        f1 = 2.0 * (prec_Xa * rec_Xa) / (prec_Xa + rec_Xa)
-        f2 = 2.0 * (prec_Xb * rec_Xb) / (prec_Xb + rec_Xb)
-        delta = f2 - f1
+        f_Xa = 2.0 * (prec_Xa * rec_Xa) / (prec_Xa + rec_Xa)
+        f_Xb = 2.0 * (prec_Xb * rec_Xb) / (prec_Xb + rec_Xb)
+        delta = f_Xb - f_Xa
     if isinstance(delta, bool):
         raise Exception('delta not found')
 
@@ -81,7 +85,7 @@ def bootstrap(Xa, Xb, b=10000, t='prec'):
         if xi['delta'] > 2 * delta:
             s += 1
 
-    if VERBOSE:
+    if VERBOSE == 'vv':
         print "Delta: ", delta
         for i, xi in enumerate(x):
             print "\ndelta(x_" + str(i) + "): ", xi['delta']
@@ -103,15 +107,64 @@ def bootstrap(Xa, Xb, b=10000, t='prec'):
         print "ssc: ", prec_Xb
     #print "s: ", s
     #print "b: ", b
+            #for k, v in sorted(xi.items()):
+                #print "\n", k
+                #if isinstance(v, list):
+                #    for it in v:
+                #        if 'p_sc' in it:
+                #            print it['p_sc']
+                #else:
+                #    print v
+    if VERBOSE:
+        print "precision, b: ", prec_Xb
+        print "precision, a: ", prec_Xa
+        print "recall, b: ", rec_Xb
+        print "recall, a: ", rec_Xa
+        print "F, b: ", f_Xb
+        print "F, a: ", f_Xa
+        print "s: ", s
+        print "b: ", b
 
     return float(s)/b
             
 sp = {}
 #spfolder = '/out/heldout'
 spfolder = '/out/dev/exhfix-gold-restrict-sameexp'
+#spfolder = '/out/exhfix-gold-restrict-sameexp'
 sp['dt'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
 sp['sb'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
 sp['conll'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
+#sp['dt-sameexp'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
+#sp['sb-sameexp'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
+#sp['conll-sameexp'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
+
+#spfolder = '/out/exhfix-gold-restrict-sametype'
+#sp['dt-sametype'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-dt.json')
+#sp['sb-sametype'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-sb.json')
+#sp['conll-sametype'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
+
+#spfolder = '/out/exhfix-gold-restrict-all'
+#sp['conll-all'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
+#print len(sp['conll'])
+VERBOSE = 'v'
+print "=", spfolder, "="
+
+if False:
+    XB = sp['conll-sametype']
+    XA = sp['conll-sameexp']
+    print "= sameexp (best) mot sametype ="
+    pvalue = bootstrap(XA, XB, b=10000, t='f')
+    print "p-value: ", pvalue
+
+if True:
+    for dep in DEPREPS:
+        for dep2 in DEPREPS:
+            if dep != dep2:
+                XA = sp[dep]
+                XB = sp[dep2]
+                print "= {} (best) mot {} =".format(dep2, dep)
+                pvalue = bootstrap(XA, XB, b=10000, t='f')
+                print "p-value: ", pvalue
 
 #347
 #518
@@ -130,12 +183,12 @@ sp['conll'] = read_jsonfile(DATA_PREFIX + spfolder + '/system_pairs-conll.json')
 #XB = sp['conll']#[112:117]
 #XA = sp['sb'][112:117]# [2305:2306]
 #XB = sp['conll'][112:117]# [2302:2306] # 310 533 2235 2303
-XA = sp['dt'][1338:1343]
-XB = sp['conll'][1338:1343]
-
-VERBOSE = False
-pvalue = bootstrap(XA, XB, b=10000, t='prec')
-print "p-value: ", pvalue
+#XA = sp['dt'][1338:1343]
+#XB = sp['conll'][1338:1343]
+#
+#VERBOSE = False
+#pvalue = bootstrap(XA, XB, b=10000, t='prec')
+#print "p-value: ", pvalue
 
 #for i in range(len(XA)-6):
 #    XA = sp['dt'][i:i+5]
@@ -152,3 +205,5 @@ print "p-value: ", pvalue
 #                pthisb = True
 #        if pthisa and pthisb:
 #            print "p-value: ", pvalue, " - ", i
+#XA = sp['sb'] # [:2000] # [112:117]
+#XB = sp['conll'] # [:2000] # [112:117]

@@ -1,0 +1,558 @@
+= ARGS =
+Namespace(argmaxcxe=None, ctest=None, ctrain=None, eval=False, featurestats='all', heldout=False, interactive=False, iob2=None, jtest=None, jtrain=None, load json-file=None, loadjsonlist='gold-restrict-sameexp-exheadfix.json', loadmodels=None, lthsrl=False, notoverlappingcandidates=False, predict=False, restrict='sameexp', save_linear_training_file=None, savejson=None, savemodels=None, semantic=False, stats=None, test=False, train=False)
+= LOAD JSON =
+
+= DEPREP: dt =
+
+= synt path =
+SB-HD↑ 5047
+SB-HD↑HD-CMP↓ 679
+SB-HD↑HD-CMP↓HD-CMP↓ 472
+HD-CMP↑ 395
+HDN-AJ↓ 269
+SP-HD↑ 263
+HD-CMP↑HDN-AJ↑ 250
+SB-HD↑HD-CMP↓HD-CMP↓HD-CMP↓ 247
+SB-HD↑HD-AJ↓ 195
+SB-HD↑HD-AJ↓HD-CMP↓ 151
+SB-HD↑HD-CMP↑ 140
+HD-CMP↑HD-CMP↑ 136
+= Number of different features =
+3724
+
+= For specific exptypes = 
+
+= dse =
+SB-HD↑ 3574
+SB-HD↑HD-CMP↓ 394
+HDN-AJ↓ 222
+SP-HD↑ 212
+HD-CMP↑ 205
+= Number of different features =
+1544
+
+= ese =
+SB-HD↑HD-CMP↓HD-CMP↓ 302
+SB-HD↑HD-CMP↓ 217
+SB-HD↑HD-CMP↓HD-CMP↓HD-CMP↓ 188
+SB-HD↑HD-CMP↓HD-CMP↓HD-CMP↓HD-CMP↓ 82
+SB-HD↑HD-AJ↓HD-CMP↓ 71
+= Number of different features =
+2206
+
+= ose =
+SB-HD↑ 1457
+HD-CMP↑ 188
+SB-HD↑HD-CMP↑ 106
+SB-HD↑HD-CMP↓ 68
+SP-HD↑ 49
+= Number of different features =
+515
+= Other counts =
+internal holdersese 4472
+synt_path Length (only arrows)ose 6555
+internal holders 16267
+internal holdersose 3171
+implicit 3343
+synt_path Length (only arrows) 51529
+internal holdersdse 8624
+w 5672
+synt_path Length (only arrows)ese 24280
+synt_path Length (only arrows)dse 20694
+
+= Other features =
+
+= ex_head_word =
+Number of different features:  3033
+Most common feature: [(u'said', 1644)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= ex_head_lemma =
+Number of different features:  2144
+Most common feature: [(u'say', 2025)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= ex_head_pos =
+Number of different features:  35
+Most common feature: [(u'VBD', 4591)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= cand_head_pos =
+Number of different features:  32
+Most common feature: [(u'NNP', 5450)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= cand_head_word =
+Number of different features:  1686
+Most common feature: [(u'he', 1280)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= dom_ex_type =
+Number of different features:  5
+Most common feature: [('dse', 1337)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+dse 1337
+ese 1149
+ose 609
+dseese 75
+eseose 8
+
+= ex_verb_voice =
+Number of different features:  3
+Most common feature: [('Active', 10976)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_r_pos =
+Number of different features:  37
+Most common feature: [(u'NNP', 3322)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_r_word =
+Number of different features:  1763
+Most common feature: [(u',', 1462)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_l_pos =
+Number of different features:  37
+Most common feature: [(u'VBD', 5512)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_l_word =
+Number of different features:  1421
+Most common feature: [(u'said', 2128)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= deprel_to_parent =
+Number of different features:  38
+Most common feature: [(u'HD-CMP', 6697)]
+Number of different features:  28
+Most common feature: [(u'HD-CMP', 3420)]
+Number of different features:  29
+Most common feature: [(u'HD-CMP', 2481)]
+Number of different features:  31
+Most common feature: [(u'ROOT', 1437)]
+
+= DEPREP: sb =
+
+= synt path =
+nsubj↑ 5804
+nsubj↑ccomp↓ 889
+poss↑ 548
+pobj↑prep↑ 488
+nsubj↑xcomp↓ 253
+nsubj↑conj↓ 231
+nsubj↑ccomp↑ 221
+rcmod↓ 200
+nsubj↑prep↓pobj↓ 173
+nsubj↑dobj↓ 155
+pobj↑pcomp↑ 146
+nsubj↑partmod↓ 143
+= Number of different features =
+3052
+
+= For specific exptypes = 
+
+= dse =
+nsubj↑ 4149
+poss↑ 418
+pobj↑prep↑ 386
+nsubj↑ccomp↓ 191
+rcmod↓ 172
+= Number of different features =
+1258
+
+= ese =
+nsubj↑ccomp↓ 679
+nsubj↑prep↓pobj↓ 100
+nsubj↑ccomp↓aux↓ 79
+nsubj↑ccomp↓advmod↓ 78
+nsubj↑ccomp↓conj↓ 77
+= Number of different features =
+1840
+
+= ose =
+nsubj↑ 1643
+nsubj↑ccomp↑ 167
+poss↑ 126
+pobj↑pcomp↑ 109
+pobj↑prep↑ 93
+= Number of different features =
+413
+= Other counts =
+internal holdersese 4472
+synt_path Length (only arrows)ose 5475
+internal holders 16267
+internal holdersose 3171
+implicit 3343
+synt_path Length (only arrows) 38818
+internal holdersdse 8624
+w 5672
+synt_path Length (only arrows)ese 17310
+synt_path Length (only arrows)dse 16033
+
+= Other features =
+
+= ex_head_word =
+Number of different features:  3463
+Most common feature: [(u'said', 1694)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= ex_head_lemma =
+Number of different features:  2424
+Most common feature: [(u'say', 2104)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= ex_head_pos =
+Number of different features:  37
+Most common feature: [(u'VBD', 4138)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= cand_head_pos =
+Number of different features:  30
+Most common feature: [(u'NNP', 5765)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= cand_head_word =
+Number of different features:  1737
+Most common feature: [(u'he', 1282)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= dom_ex_type =
+Number of different features:  5
+Most common feature: [('dse', 3068)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+dse 3068
+ese 1494
+ose 1165
+dseese 176
+eseose 18
+
+= ex_verb_voice =
+Number of different features:  3
+Most common feature: [('Active', 11485)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_r_pos =
+Number of different features:  37
+Most common feature: [(u'NNP', 3142)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_r_word =
+Number of different features:  1685
+Most common feature: [(u',', 1448)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_l_pos =
+Number of different features:  39
+Most common feature: [(u'VBD', 5537)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_l_word =
+Number of different features:  1260
+Most common feature: [(u'said', 2145)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= deprel_to_parent =
+Number of different features:  41
+Most common feature: [(u'root', 4814)]
+Number of different features:  33
+Most common feature: [(u'root', 3064)]
+Number of different features:  40
+Most common feature: [(u'ccomp', 1074)]
+Number of different features:  27
+Most common feature: [(u'root', 1646)]
+
+= DEPREP: conll =
+
+= synt path =
+SBJ↑ 5518
+NMOD↑ 756
+SBJ↑OBJ↓ 582
+SBJ↑ADV↓ 268
+PMOD↑NMOD↑ 266
+SBJ↑VC↓ 256
+NMOD↓ 233
+SBJ↑COORD↓CONJ↓ 183
+SBJ↑OBJ↑ 181
+SBJ↑OBJ↓SUB↓ 175
+PMOD↑PMOD↑ 145
+SBJ↑ADV↓PMOD↓ 122
+= Number of different features =
+3929
+
+= For specific exptypes = 
+
+= dse =
+SBJ↑ 3896
+NMOD↑ 587
+PMOD↑NMOD↑ 222
+SBJ↑VC↓ 217
+NMOD↓ 196
+= Number of different features =
+1626
+
+= ese =
+SBJ↑OBJ↓ 402
+SBJ↑OBJ↓SUB↓ 144
+SBJ↑OBJ↓PRD↓ 112
+SBJ↑ADV↓PMOD↓ 93
+SBJ↑OBJ↓ADV↓ 90
+= Number of different features =
+2274
+
+= ose =
+SBJ↑ 1606
+NMOD↑ 164
+SBJ↑OBJ↑ 147
+PMOD↑PMOD↑ 108
+SBJ↑ADV↓ 88
+= Number of different features =
+488
+= Other counts =
+internal holdersese 4472
+synt_path Length (only arrows)ose 6257
+internal holders 16267
+internal holdersose 3171
+implicit 3343
+synt_path Length (only arrows) 49098
+internal holdersdse 8624
+w 5672
+synt_path Length (only arrows)ese 23023
+synt_path Length (only arrows)dse 19818
+
+= Other features =
+
+= ex_head_word =
+Number of different features:  3077
+Most common feature: [(u'said', 1644)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= ex_head_lemma =
+Number of different features:  2182
+Most common feature: [(u'say', 2024)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= ex_head_pos =
+Number of different features:  35
+Most common feature: [(u'VBD', 4620)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= cand_head_pos =
+Number of different features:  28
+Most common feature: [(u'NNP', 5732)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= cand_head_word =
+Number of different features:  1731
+Most common feature: [(u'he', 1282)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= dom_ex_type =
+Number of different features:  5
+Most common feature: [('dse', 1706)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+dse 1706
+ese 1158
+ose 773
+dseese 111
+eseose 9
+
+= ex_verb_voice =
+Number of different features:  3
+Most common feature: [('Active', 10958)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_r_pos =
+Number of different features:  37
+Most common feature: [(u'NNP', 3216)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_r_word =
+Number of different features:  1701
+Most common feature: [(u',', 1428)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_l_pos =
+Number of different features:  39
+Most common feature: [(u'VBD', 5565)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= context_l_word =
+Number of different features:  1279
+Most common feature: [(u'said', 2156)]
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+Number of different features:  0
+Most common feature: []
+
+= deprel_to_parent =
+Number of different features:  27
+Most common feature: [(u'ROOT', 4535)]
+Number of different features:  25
+Most common feature: [(u'ROOT', 2809)]
+Number of different features:  25
+Most common feature: [(u'OBJ', 806)]
+Number of different features:  23
+Most common feature: [(u'ROOT', 1632)]

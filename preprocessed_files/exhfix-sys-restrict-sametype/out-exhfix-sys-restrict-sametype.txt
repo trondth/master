@@ -1,0 +1,398 @@
+$ date  ; /ltg/python/bin/python /home/trondth/src/master/opinionholder.py -jtrain ../devtrain.json -ctrain ../devtrain.conll -jtest ../devtest.json -ctest ../devtest.conll -e -predict -iob2 ../endelige/devresults.txt -restrict sametype ; date
+ma. 08. aug. 09:41:52 +0200 2016
+= ARGS =
+Namespace(argmaxcxe=None, ctest='../devtest.conll', ctrain='../devtrain.conll', eval=True, featurestats=None, heldout=False, interactive=False, iob2='../endelige/devresults.txt', jtest='../devtest.json', jtrain='../devtrain.json', load json-file=None, loadjsonlist=None, loadmodels=None, lthsrl=False, notoverlappingcandidates=False, predict=True, restrict='sametype', save_linear_training_file=None, savejson=None, savemodels=None, semantic=False, stats=None, test=False, train=False)
+= READ JSON =
+= READ IOB2 =
+/home/trondth/src/master/opinionholder.py:1411: UnicodeWarning: Unicode unequal comparison failed to convert both arguments to Unicode - interpreting them as being unequal
+  if ttoken['form'] != rtoken['form']:
+324
+sent: {}
+{}
+
+Ari’el
+Ari’el
+= PARSE =
+= EVAL =
+= DEPREP: dt =
+open ../devtrain.conll.dt
+setning: 10
+setning: 100
+setning: 1000
+setning: 2000
+setning: 3000
+setning: 4000
+setning: 5000
+setning: 6000
+setning: 7000
+setning: 8000
+setning: 9000
+setning: 10000
+open ../devtest.conll.dt
+setning: 10
+setning: 100
+setning: 1000
+= DEPREP: sb =
+open ../devtrain.conll.sb
+setning: 10
+setning: 100
+setning: 1000
+setning: 2000
+setning: 3000
+setning: 4000
+setning: 5000
+setning: 6000
+setning: 7000
+setning: 8000
+setning: 9000
+setning: 10000
+open ../devtest.conll.sb
+setning: 10
+setning: 100
+setning: 1000
+= DEPREP: conll =
+open ../devtrain.conll.conll
+setning: 10
+setning: 100
+setning: 1000
+setning: 2000
+setning: 3000
+setning: 4000
+setning: 5000
+setning: 6000
+setning: 7000
+setning: 8000
+setning: 9000
+setning: 10000
+open ../devtest.conll.conll
+setning: 10
+setning: 100
+setning: 1000
+== cleaning lsts ==
+== train ==
+Get features from gold expressions. (No PGATE in token)
+setning 0
+setning 1000
+setning 2000
+setning 3000
+setning 4000
+setning 5000
+setning 6000
+setning 7000
+setning 8000
+setning 9000
+setning 10000
+Counter({'gold_len_newese': 8967, 'sys_len_newese': 8967, 'gold_len_ignoring_overlapese': 8323, 'sys_len_newdse': 7996, 'gold_len_newdse': 7996, 'gold_len_ignoring_overlapdse': 7986, 'sys_len_newose': 3335, 'gold_len_newose': 3335, 'gold_len_ignoring_overlapose': 3261, 'holder_not_in_candidate_head': 864, 'holder_not_in_candidates': 487, 'holder_not_in_candidatesdse': 346, 'expt_not_in_candidates': 296, 'expt_not_in_candidatesese': 263, 'holder_not_in_candidatesose': 76, 'holder_not_in_candidatesese': 65, 'exp-pair no nested source': 34, 'expt_not_in_candidatesdse': 28, 'ignore_count': 15, 'holder not in candidates - special case': 15, 'expt_not_in_candidatesose': 5})
+
+== test ==
+Get features from predicted expressions.
+setning 0
+setning 1000
+Counter({'gold_len_newese': 1107, 'gold_len_ignoring_overlapese': 1026, 'gold_len_newdse': 952, 'gold_len_ignoring_overlapdse': 948, 'sys_len_newdse': 602, 'sys_len_newese': 507, 'gold_len_newose': 457, 'gold_len_ignoring_overlapose': 446, 'falsely_detected_exp': 270, 'sys_len_newose': 248, 'falsely_detected_expese': 174, 'falsely_detected_expdse': 63, 'holder_not_in_candidate_head': 50, 'falsely_detected_expose': 33, 'holder_not_in_candidates': 7, 'expt_not_in_candidates': 4, 'holder_not_in_candidatesdse': 3, 'expt_not_in_candidatesese': 3, 'holder_not_in_candidatesese': 2, 'holder_not_in_candidatesose': 2, 'exp-pair no nested source': 2, 'expt_not_in_candidatesdse': 1})
+== eval ==
+== dt ==
+exptype: dse
+prec_sum: 420.200602782 (del p s len)
+rec_sum: 471.955345472 (del p g len)
+gold len: 952
+sys len: 665
+system exp - dse:
+P: 0.631880605687
+R: 0.49575141331
+F: 0.55559916362
+
+== eval ==
+== dt ==
+exptype: ese
+prec_sum: 298.292888398 (del p s len)
+rec_sum: 310.21844071 (del p g len)
+gold len: 1107
+sys len: 681
+system exp - ese:
+P: 0.438021862552
+R: 0.280233460442
+F: 0.341795955735
+
+== eval ==
+== dt ==
+exptype: ose
+prec_sum: 192.262351363 (del p s len)
+rec_sum: 218.433333333 (del p g len)
+gold len: 457
+sys len: 281
+system exp - ose:
+P: 0.684207656094
+R: 0.477972283005
+F: 0.562791155536
+
+exptype: False
+prec_sum: 910.755842543 (del p s len)
+rec_sum: 1000.60711951 (del p g len)
+gold len: 2516
+sys len: 1627
+system exp - all:
+P: 0.559776178576
+R: 0.397697583273
+F: 0.465018765555
+
+exp-pair no nested source 2
+expt_not_in_candidates 4
+expt_not_in_candidatesdse 1
+expt_not_in_candidatesese 3
+falsely_detected_exp 270
+falsely_detected_expdse 63
+falsely_detected_expese 174
+falsely_detected_expose 33
+getsp gold lst 246
+gold_len_ignoring_overlapdse 948
+gold_len_ignoring_overlapese 1026
+gold_len_ignoring_overlapose 446
+gold_len_new_getuniquedse 599
+gold_len_new_getuniqueese 505
+gold_len_new_getuniqueose 246
+gold_len_newdse 952
+gold_len_newese 1107
+gold_len_newose 457
+holder_not_in_candidate_head 50
+holder_not_in_candidates 7
+holder_not_in_candidatesdse 3
+holder_not_in_candidatesese 2
+holder_not_in_candidatesose 2
+s_p_impdse 599
+s_p_impese 505
+s_p_impose 246
+s_p_int 246
+s_p_intdse 599
+s_p_intese 505
+s_p_intose 246
+s_p_wdse 599
+s_p_wese 505
+s_p_wose 246
+sys_len_newdse 602
+sys_len_newese 507
+sys_len_newose 248
+system_pairs_alldse 599
+system_pairs_allese 505
+system_pairs_allose 246
+system_pairsdse 599
+system_pairsese 505
+system_pairsose 246
+== cleaning lsts ==
+== train ==
+Get features from gold expressions. (No PGATE in token)
+setning 0
+setning 1000
+setning 2000
+setning 3000
+setning 4000
+setning 5000
+setning 6000
+setning 7000
+setning 8000
+setning 9000
+setning 10000
+Counter({'gold_len_newese': 10074, 'sys_len_newese': 9474, 'gold_len_ignoring_overlapese': 9349, 'gold_len_newdse': 8948, 'gold_len_ignoring_overlapdse': 8934, 'sys_len_newdse': 8598, 'gold_len_newose': 3792, 'gold_len_ignoring_overlapose': 3707, 'sys_len_newose': 3583, 'holder_not_in_candidate_head': 1384, 'holder_not_in_candidates': 732, 's_p_wdse': 599, 'system_pairs_alldse': 599, 's_p_intdse': 599, 'gold_len_new_getuniquedse': 599, 's_p_impdse': 599, 'system_pairsdse': 599, 'holder_not_in_candidatesdse': 532, 's_p_wese': 505, 's_p_impese': 505, 'system_pairs_allese': 505, 'gold_len_new_getuniqueese': 505, 'system_pairsese': 505, 's_p_intese': 505, 'expt_not_in_candidates': 362, 'expt_not_in_candidatesese': 323, 'falsely_detected_exp': 270, 'system_pairsose': 246, 's_p_impose': 246, 'getsp gold lst': 246, 'system_pairs_allose': 246, 's_p_int': 246, 's_p_intose': 246, 's_p_wose': 246, 'gold_len_new_getuniqueose': 246, 'falsely_detected_expese': 174, 'holder_not_in_candidatesose': 134, 'holder_not_in_candidatesese': 66, 'falsely_detected_expdse': 63, 'exp-pair no nested source': 36, 'expt_not_in_candidatesdse': 34, 'falsely_detected_expose': 33, 'holder not in candidates - special case': 25, 'ignore_count': 25, 'expt_not_in_candidatesose': 5})
+
+== test ==
+Get features from predicted expressions.
+setning 0
+setning 1000
+Counter({'gold_len_newese': 1107, 'gold_len_ignoring_overlapese': 1026, 'gold_len_newdse': 952, 'gold_len_ignoring_overlapdse': 948, 'sys_len_newdse': 602, 'sys_len_newese': 507, 'gold_len_newose': 457, 'gold_len_ignoring_overlapose': 446, 'falsely_detected_exp': 270, 'sys_len_newose': 248, 'falsely_detected_expese': 174, 'holder_not_in_candidate_head': 95, 'falsely_detected_expdse': 63, 'falsely_detected_expose': 33, 'holder_not_in_candidates': 5, 'expt_not_in_candidates': 4, 'expt_not_in_candidatesese': 3, 'holder_not_in_candidatesese': 2, 'holder_not_in_candidatesose': 2, 'exp-pair no nested source': 2, 'holder_not_in_candidatesdse': 1, 'expt_not_in_candidatesdse': 1})
+== eval ==
+== sb ==
+exptype: dse
+prec_sum: 426.358429706 (del p s len)
+rec_sum: 466.744771242 (del p g len)
+gold len: 952
+sys len: 665
+system exp - dse:
+P: 0.641140495799
+R: 0.490278121052
+F: 0.555651379479
+
+== eval ==
+== sb ==
+exptype: ese
+prec_sum: 313.42220081 (del p s len)
+rec_sum: 318.684313725 (del p g len)
+gold len: 1107
+sys len: 681
+system exp - ese:
+P: 0.460238180337
+R: 0.287881042209
+F: 0.354205166842
+
+== eval ==
+== sb ==
+exptype: ose
+prec_sum: 192.213706308 (del p s len)
+rec_sum: 202.75 (del p g len)
+gold len: 457
+sys len: 281
+system exp - ose:
+P: 0.684034542021
+R: 0.443654266958
+F: 0.538224447912
+
+exptype: False
+prec_sum: 931.994336824 (del p s len)
+rec_sum: 988.179084967 (del p g len)
+gold len: 2516
+sys len: 1627
+system exp - all:
+P: 0.572829955024
+R: 0.392757982896
+F: 0.466003206632
+
+exp-pair no nested source 2
+expt_not_in_candidates 4
+expt_not_in_candidatesdse 1
+expt_not_in_candidatesese 3
+falsely_detected_exp 270
+falsely_detected_expdse 63
+falsely_detected_expese 174
+falsely_detected_expose 33
+getsp gold lst 246
+gold_len_ignoring_overlapdse 948
+gold_len_ignoring_overlapese 1026
+gold_len_ignoring_overlapose 446
+gold_len_new_getuniquedse 601
+gold_len_new_getuniqueese 505
+gold_len_new_getuniqueose 246
+gold_len_newdse 952
+gold_len_newese 1107
+gold_len_newose 457
+holder_not_in_candidate_head 95
+holder_not_in_candidates 5
+holder_not_in_candidatesdse 1
+holder_not_in_candidatesese 2
+holder_not_in_candidatesose 2
+s_p_impdse 601
+s_p_impese 505
+s_p_impose 246
+s_p_int 246
+s_p_intdse 601
+s_p_intese 505
+s_p_intose 246
+s_p_wdse 601
+s_p_wese 505
+s_p_wose 246
+sys_len_newdse 602
+sys_len_newese 507
+sys_len_newose 248
+system_pairs_alldse 601
+system_pairs_allese 505
+system_pairs_allose 246
+system_pairsdse 601
+system_pairsese 505
+system_pairsose 246
+== cleaning lsts ==
+== train ==
+Get features from gold expressions. (No PGATE in token)
+setning 0
+setning 1000
+setning 2000
+setning 3000
+setning 4000
+setning 5000
+setning 6000
+setning 7000
+setning 8000
+setning 9000
+setning 10000
+Counter({'gold_len_newese': 10074, 'sys_len_newese': 9474, 'gold_len_ignoring_overlapese': 9349, 'gold_len_newdse': 8948, 'gold_len_ignoring_overlapdse': 8934, 'sys_len_newdse': 8598, 'gold_len_newose': 3792, 'gold_len_ignoring_overlapose': 3707, 'sys_len_newose': 3583, 'holder_not_in_candidate_head': 1359, 'holder_not_in_candidates': 727, 's_p_wdse': 601, 'system_pairs_alldse': 601, 's_p_intdse': 601, 'gold_len_new_getuniquedse': 601, 's_p_impdse': 601, 'system_pairsdse': 601, 'holder_not_in_candidatesdse': 525, 's_p_wese': 505, 's_p_impese': 505, 'system_pairs_allese': 505, 'gold_len_new_getuniqueese': 505, 'system_pairsese': 505, 's_p_intese': 505, 'expt_not_in_candidates': 321, 'expt_not_in_candidatesese': 284, 'falsely_detected_exp': 270, 'system_pairsose': 246, 's_p_impose': 246, 'getsp gold lst': 246, 'system_pairs_allose': 246, 's_p_int': 246, 's_p_intose': 246, 's_p_wose': 246, 'gold_len_new_getuniqueose': 246, 'falsely_detected_expese': 174, 'holder_not_in_candidatesose': 131, 'holder_not_in_candidatesese': 71, 'falsely_detected_expdse': 63, 'exp-pair no nested source': 36, 'falsely_detected_expose': 33, 'expt_not_in_candidatesdse': 32, 'holder not in candidates - special case': 21, 'ignore_count': 21, 'expt_not_in_candidatesose': 5})
+
+== test ==
+Get features from predicted expressions.
+setning 0
+setning 1000
+Counter({'gold_len_newese': 1107, 'gold_len_ignoring_overlapese': 1026, 'gold_len_newdse': 952, 'gold_len_ignoring_overlapdse': 948, 'sys_len_newdse': 602, 'sys_len_newese': 507, 'gold_len_newose': 457, 'gold_len_ignoring_overlapose': 446, 'falsely_detected_exp': 270, 'sys_len_newose': 248, 'falsely_detected_expese': 174, 'holder_not_in_candidate_head': 89, 'falsely_detected_expdse': 63, 'falsely_detected_expose': 33, 'holder_not_in_candidates': 6, 'expt_not_in_candidates': 4, 'holder_not_in_candidatesdse': 3, 'expt_not_in_candidatesese': 3, 'holder_not_in_candidatesese': 2, 'exp-pair no nested source': 2, 'holder_not_in_candidatesose': 1, 'expt_not_in_candidatesdse': 1})
+== eval ==
+== conll ==
+exptype: dse
+prec_sum: 422.075973505 (del p s len)
+rec_sum: 457.776167134 (del p g len)
+gold len: 952
+sys len: 665
+system exp - dse:
+P: 0.634700712038
+R: 0.480857318418
+F: 0.547170965662
+
+== eval ==
+== conll ==
+exptype: ese
+prec_sum: 305.077573215 (del p s len)
+rec_sum: 308.01844071 (del p g len)
+gold len: 1107
+sys len: 681
+system exp - ese:
+P: 0.447984689009
+R: 0.278246107235
+F: 0.343279289346
+
+== eval ==
+== conll ==
+exptype: ose
+prec_sum: 191.035826124 (del p s len)
+rec_sum: 204.85 (del p g len)
+gold len: 457
+sys len: 281
+system exp - ose:
+P: 0.679842797593
+R: 0.448249452954
+F: 0.540273478464
+
+exptype: False
+prec_sum: 918.189372844 (del p s len)
+rec_sum: 970.644607843 (del p g len)
+gold len: 2516
+sys len: 1627
+system exp - all:
+P: 0.564345035552
+R: 0.38578879485
+F: 0.458289104501
+
+exp-pair no nested source 2
+expt_not_in_candidates 4
+expt_not_in_candidatesdse 1
+expt_not_in_candidatesese 3
+falsely_detected_exp 270
+falsely_detected_expdse 63
+falsely_detected_expese 174
+falsely_detected_expose 33
+getsp gold lst 247
+gold_len_ignoring_overlapdse 948
+gold_len_ignoring_overlapese 1026
+gold_len_ignoring_overlapose 446
+gold_len_new_getuniquedse 599
+gold_len_new_getuniqueese 505
+gold_len_new_getuniqueose 247
+gold_len_newdse 952
+gold_len_newese 1107
+gold_len_newose 457
+holder_not_in_candidate_head 89
+holder_not_in_candidates 6
+holder_not_in_candidatesdse 3
+holder_not_in_candidatesese 2
+holder_not_in_candidatesose 1
+s_p_impdse 599
+s_p_impese 505
+s_p_impose 247
+s_p_int 247
+s_p_intdse 599
+s_p_intese 505
+s_p_intose 247
+s_p_wdse 599
+s_p_wese 505
+s_p_wose 247
+sys_len_newdse 602
+sys_len_newese 507
+sys_len_newose 248
+system_pairs_alldse 599
+system_pairs_allese 505
+system_pairs_allose 247
+system_pairsdse 599
+system_pairsese 505
+system_pairsose 247
+ma. 08. aug. 12:35:40 +0200 2016
